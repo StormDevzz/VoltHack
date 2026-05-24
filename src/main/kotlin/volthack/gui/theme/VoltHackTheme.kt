@@ -27,7 +27,8 @@ object VoltHackTheme {
         Category.MOVEMENT to 0xFF2ED573.toInt(),
         Category.RENDER to 0xFF1E90FF.toInt(),
         Category.PLAYER to 0xFFFFA502.toInt(),
-        Category.WORLD to 0xFFA855F7.toInt()
+        Category.WORLD to 0xFFA855F7.toInt(),
+        Category.CONFIGS to 0xFF00D4FF.toInt()
     )
 
     const val CARD_WIDTH = 130

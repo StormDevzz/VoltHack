@@ -14,7 +14,7 @@ object HUDManager {
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
     private val configFile: Path by lazy {
-        FabricLoader.getInstance().configDir.resolve("volthack/hud.json")
+        FabricLoader.getInstance().gameDir.resolve("VoltHack/hud.json")
     }
 
     fun register(element: HUDElement) {

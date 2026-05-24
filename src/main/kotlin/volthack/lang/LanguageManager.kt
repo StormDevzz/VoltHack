@@ -13,7 +13,7 @@ object LanguageManager {
     private var currentLang = "en_us"
 
     private val customDir: Path by lazy {
-        FabricLoader.getInstance().configDir.resolve("volthack/lang")
+        FabricLoader.getInstance().gameDir.resolve("VoltHack/lang")
     }
 
     fun initialize() {

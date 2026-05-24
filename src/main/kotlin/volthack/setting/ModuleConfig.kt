@@ -9,11 +9,11 @@ object ModuleConfig {
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
     private val configDir: Path by lazy {
-        FabricLoader.getInstance().configDir.resolve("volthack/modules")
+        FabricLoader.getInstance().gameDir.resolve("VoltHack/modules")
     }
 
     private val firstLaunchFlag: Path by lazy {
-        FabricLoader.getInstance().configDir.resolve("volthack/.initialized")
+        FabricLoader.getInstance().gameDir.resolve("VoltHack/.initialized")
     }
 
     var isFirstLaunch: Boolean = true

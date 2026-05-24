@@ -81,5 +81,6 @@ enum class Category(val displayName: String) {
     MOVEMENT("Movement"),
     RENDER("Render"),
     PLAYER("Player"),
-    WORLD("World")
+    WORLD("World"),
+    CONFIGS("Configs")
 }

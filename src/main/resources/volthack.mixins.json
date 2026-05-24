@@ -1,5 +1,6 @@
 {
     "required": true,
+    "refmap": "volthack.refmap.json",
     "minVersion": "0.8",
     "package": "volthack.mixin",
     "compatibilityLevel": "JAVA_21",

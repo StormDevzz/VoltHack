@@ -1,6 +1,6 @@
 package volthack.modules
 
-import volthack.modules.combat.Aura
+import volthack.modules.combat.KillAura
 import volthack.modules.combat.Velocity
 import volthack.modules.movement.NoFall
 import volthack.modules.player.DiscordStatusModule
@@ -14,7 +14,7 @@ import volthack.setting.ModuleManager
 
 object ModRegistry {
     private val modules = listOf(
-        Aura,
+        KillAura,
         Velocity,
         NoFall,
         FullBright,

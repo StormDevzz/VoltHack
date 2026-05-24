@@ -47,6 +47,29 @@ class VoltLoadingScreen : Screen(Component.literal("Loading")) {
 
         ctx.fill(0, 0, width, height, 0xFF0D0D1A.toInt())
 
+        // Draw corner brackets
+        val margin = 16
+        val len = 20
+        val thick = 2
+        val col = RenderUtils.withAlpha(0xFF6C63FF.toInt(), (180 * alphaMul).toInt())
+        val col2 = RenderUtils.withAlpha(0xFF00D4FF.toInt(), (180 * alphaMul).toInt())
+
+        // Top-Left
+        ctx.fill(margin, margin, margin + len, margin + thick, col)
+        ctx.fill(margin, margin, margin + thick, margin + len, col)
+
+        // Top-Right
+        ctx.fill(width - margin - len, margin, width - margin, margin + thick, col2)
+        ctx.fill(width - margin - thick, margin, width - margin, margin + len, col2)
+
+        // Bottom-Left
+        ctx.fill(margin, height - margin - thick, margin + len, height - margin, col2)
+        ctx.fill(margin, height - margin - len, margin + thick, height - margin, col2)
+
+        // Bottom-Right
+        ctx.fill(width - margin - len, height - margin - thick, width - margin, height - margin, col)
+        ctx.fill(width - margin - thick, height - margin - len, width - margin, height - margin, col)
+
         val cx = width / 2f
         val titleStr = "VoltHack"
         val titleW = FontUtils.width(titleStr)

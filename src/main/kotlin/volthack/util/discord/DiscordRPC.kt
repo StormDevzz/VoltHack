@@ -13,6 +13,7 @@ import volthack.util.discord.internal.runtime.ClientHandle
 object DiscordRPC {
     private var client: IPCClient? = null
     private var connected = false
+    private var startTime = 0L
 
     val isConnected: Boolean get() = connected
 
@@ -22,26 +23,29 @@ object DiscordRPC {
         VoltHack.LOGGER.info("Discord RPC connecting (id: ${id.toString().take(4)}...)")
         client = IPCClient(id)
         client?.setListener(object : IPCListener {
-            override fun onReady(c: IPCClient) {
+            override fun onReady(c: IPCClient?) {
                 connected = true
+                startTime = System.currentTimeMillis()
                 VoltHack.LOGGER.info("Discord RPC connected successfully")
                 update("VoltHack v${VoltHack.version}", "Hacking the mainframe")
             }
 
-            override fun onPacketSent(c: IPCClient, p: Packet) {}
-            override fun onPacketReceived(c: IPCClient, p: Packet) {}
-            override fun onActivityJoin(c: IPCClient, s: String) {}
-            override fun onActivitySpectate(c: IPCClient, s: String) {}
-            override fun onActivityJoinRequest(c: IPCClient, s: String, u: User) {}
+            override fun onPacketSent(c: IPCClient?, p: Packet?) {}
+            override fun onPacketReceived(c: IPCClient?, p: Packet?) {}
+            override fun onActivityJoin(c: IPCClient?, s: String?) {}
+            override fun onActivitySpectate(c: IPCClient?, s: String?) {}
+            override fun onActivityJoinRequest(c: IPCClient?, s: String?, u: User?) {}
 
-            override fun onClose(c: IPCClient, json: JsonObject) {
+            override fun onClose(c: IPCClient?, json: JsonObject?) {
                 connected = false
+                startTime = 0L
                 VoltHack.LOGGER.info("Discord RPC closed")
             }
 
-            override fun onDisconnect(c: IPCClient, t: Throwable) {
+            override fun onDisconnect(c: IPCClient?, t: Throwable?) {
                 connected = false
-                VoltHack.LOGGER.warn("Discord RPC disconnected: ${t.message}")
+                startTime = 0L
+                VoltHack.LOGGER.warn("Discord RPC disconnected: ${t?.message}")
             }
         })
 
@@ -59,7 +63,10 @@ object DiscordRPC {
             .setActivityType(ActivityType.Playing)
             .setDetails(details)
             .setState(state)
-            .setStartTimestamp(System.currentTimeMillis())
+
+        if (startTime != 0L) {
+            builder.setStartTimestamp(startTime)
+        }
 
         if (largeImage != null) {
             builder.setLargeImage(largeImage, "VoltHack")
@@ -78,6 +85,7 @@ object DiscordRPC {
         } catch (_: Exception) {}
         client = null
         connected = false
+        startTime = 0L
         VoltHack.LOGGER.info("Discord RPC stopped")
     }
 }

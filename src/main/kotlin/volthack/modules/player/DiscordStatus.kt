@@ -26,7 +26,7 @@ object DiscordStatusModule : Module(
             DiscordRPC.start()
         }
         tickCounter = 0
-        updatePresence()
+        updatePresence(force = true)
     }
 
     override fun onDisable() {
@@ -36,12 +36,17 @@ object DiscordStatusModule : Module(
     private fun onTick() {
         if (!enabled) return
         tickCounter++
-        if (tickCounter < 20) return
-        tickCounter = 0
-        updatePresence()
+        
+        val stateChanged = updatePresence(force = false)
+        if (stateChanged || tickCounter >= 100) {
+            tickCounter = 0
+            if (!stateChanged) {
+                updatePresence(force = true)
+            }
+        }
     }
 
-    private fun updatePresence() {
+    private fun updatePresence(force: Boolean = false): Boolean {
         val mc = Minecraft.getInstance()
 
         val state = when {
@@ -54,7 +59,7 @@ object DiscordStatusModule : Module(
             }
         }
 
-        if (state != lastState) {
+        if (state != lastState || force) {
             lastState = state
             val details = when {
                 mc.level == null -> "VoltHack v${volthack.VoltHack.version}"
@@ -66,6 +71,8 @@ object DiscordStatusModule : Module(
                 }
             }
             DiscordRPC.update(details = details, state = state, largeImage = "volt")
+            return true
         }
+        return false
     }
 }
