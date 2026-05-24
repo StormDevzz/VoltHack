@@ -67,6 +67,7 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
     }
 
     override fun render(ctx: GuiGraphics, mouseX: Int, mouseY: Int, delta: Float) {
+        SettingWidget.hoveredSetting = null
         ctx.fill(0, 0, width, height, VoltHackTheme.overlay)
         renderTabs(ctx, mouseX, mouseY)
 
@@ -90,9 +91,14 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
             }
         }
 
-        if (hoveredName.isNotEmpty()) {
+        if (hoveredName.isNotEmpty() && SettingWidget.hoveredSetting == null) {
             val desc = LanguageManager.get("module.$hoveredName.description")
             TooltipRenderer.render(ctx, desc, mouseX, mouseY)
+        }
+
+        val hoveredS = SettingWidget.hoveredSetting
+        if (hoveredS != null && hoveredS.description.isNotEmpty()) {
+            TooltipRenderer.render(ctx, hoveredS.description, mouseX, mouseY)
         }
     }
 
@@ -209,6 +215,9 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
     }
 
     override fun charTyped(characterEvent: CharacterEvent): Boolean {
+        if (SettingWidget.activeInputSetting != null) {
+            if (SettingWidget.charTyped(characterEvent)) return true
+        }
         if (selectedCategory == Category.CONFIGS) {
             val char = characterEvent.codepoint().toChar()
             if (char.isLetterOrDigit() || char == '_' || char == '-') {
@@ -326,7 +335,15 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
         return true
     }
 
+    override fun mouseDragged(mouseButtonEvent: MouseButtonEvent, d: Double, e: Double): Boolean {
+        if (SettingWidget.mouseDragged(mouseButtonEvent.x().toInt(), mouseButtonEvent.y().toInt(), mouseButtonEvent.button())) return true
+        return super.mouseDragged(mouseButtonEvent, d, e)
+    }
+
     override fun keyPressed(event: KeyEvent): Boolean {
+        if (SettingWidget.activeInputSetting != null) {
+            if (SettingWidget.keyPressed(event)) return true
+        }
         if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_RIGHT_SHIFT) {
             onClose()
             return true

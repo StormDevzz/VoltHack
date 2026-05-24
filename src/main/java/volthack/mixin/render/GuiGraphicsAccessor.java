@@ -1,4 +1,4 @@
-package volthack.mixin;
+package volthack.mixin.render;
 
 import net.minecraft.client.gui.GuiGraphics;
 import org.joml.Matrix3x2fStack;

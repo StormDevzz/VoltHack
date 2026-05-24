@@ -1,4 +1,4 @@
-package volthack.mixin;
+package volthack.mixin.entity;
 
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;

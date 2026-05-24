@@ -1,4 +1,4 @@
-package volthack.mixin;
+package volthack.mixin.client;
 
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;

@@ -25,7 +25,7 @@ abstract class HUDElement(val name: String) {
 
     fun updateAnimation() {
         val mc = Minecraft.getInstance()
-        val editorOpen = mc.screen is HUDEditorScreen || mc.screen is ClickGUI
+        val editorOpen = mc.screen is HUDEditorScreen
         
         val targetOpacity = if (enabled) 1f else if (editorOpen) 0.4f else 0f
         
@@ -46,7 +46,7 @@ abstract class HUDElement(val name: String) {
         updateAnimation()
         if (currentOpacity <= 0.01f) return
 
-        val stack = (ctx as volthack.mixin.GuiGraphicsAccessor).pose
+        val stack = (ctx as volthack.mixin.render.GuiGraphicsAccessor).pose
         stack.pushMatrix()
 
         // 1. Position translation

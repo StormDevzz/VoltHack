@@ -34,6 +34,14 @@ abstract class Module(
         enabled = true
         onEnable()
         onStateChanged?.invoke(this)
+        if (this.name != "Notifications" && volthack.modules.render.Notifications.enabled && volthack.modules.render.Notifications.notifyModules) {
+            volthack.util.render.NotificationManager.add(
+                "Module Enabled",
+                "${this.name} has been enabled",
+                volthack.util.render.NotificationType.SUCCESS,
+                2000L
+            )
+        }
     }
 
     fun disable() {
@@ -41,6 +49,14 @@ abstract class Module(
         enabled = false
         onDisable()
         onStateChanged?.invoke(this)
+        if (this.name != "Notifications" && volthack.modules.render.Notifications.enabled && volthack.modules.render.Notifications.notifyModules) {
+            volthack.util.render.NotificationManager.add(
+                "Module Disabled",
+                "${this.name} has been disabled",
+                volthack.util.render.NotificationType.ERROR,
+                2000L
+            )
+        }
     }
 
     protected open fun onEnable() {}
@@ -75,6 +91,12 @@ abstract class Module(
         default: String = modes.firstOrNull() ?: "",
         description: String = ""
     ) = Setting.Mode(name, description, default, modes).also { settings.add(it) }
+
+    protected fun color(
+        name: String,
+        default: kotlin.Int = 0xFFFFFFFF.toInt(),
+        description: String = ""
+    ) = Setting.Color(name, description, default).also { settings.add(it) }
 }
 
 enum class Category(val displayName: String) {

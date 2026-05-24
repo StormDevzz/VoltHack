@@ -1,4 +1,4 @@
-package volthack.mixin;
+package volthack.mixin.render;
 
 import net.minecraft.client.Camera;
 import net.minecraft.world.entity.Entity;

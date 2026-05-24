@@ -4,5 +4,7 @@ accessWidener v2 named
 accessible class net/minecraft/client/Minecraft
 accessible class net/minecraft/client/Options
 accessible field net/minecraft/client/Options framerateLimit Lnet/minecraft/client/OptionInstance;
+accessible field net/minecraft/client/multiplayer/ClientLevel players Ljava/util/List;
+accessible field net/minecraft/world/level/Level players Ljava/util/List;
 
 

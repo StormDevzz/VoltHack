@@ -23,7 +23,10 @@ object Trigger : Module("Trigger", "Attacks target under your crosshair automati
         EventBus.listen<TickEvent> { onTick() }
     }
 
+    var currentTarget: LivingEntity? = null
+
     private fun onTick() {
+        currentTarget = null
         if (!enabled) return
 
         val mc = Minecraft.getInstance()
@@ -33,6 +36,7 @@ object Trigger : Module("Trigger", "Attacks target under your crosshair automati
         if (target !is LivingEntity || target.isDeadOrDying) return
 
         if (!isValidTarget(target)) return
+        currentTarget = target
 
         if (cooldown && !AttackUtil.isWeaponCharged()) return
 

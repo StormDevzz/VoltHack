@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
 class TargetRenderElement : HUDElement("TargetRender") {
     private val customColor by color("Color", 0xFF6C63FF.toInt())
     
-    private var currentTarget: LivingEntity? = null
+    var currentTarget: LivingEntity? = null
     private var lastHitTime = 0L
 
     init {

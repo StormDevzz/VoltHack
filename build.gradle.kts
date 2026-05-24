@@ -56,6 +56,10 @@ loom {
     }
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 val mcVersion: String = property("minecraft_version") as String
 val loaderVersion: String = property("loader_version") as String
 
@@ -72,8 +76,14 @@ tasks.processResources {
         expand(props)
     }
 }
-
-
 kotlin {
     jvmToolchain(21)
 }
+
+
+
+
+
+
+
+

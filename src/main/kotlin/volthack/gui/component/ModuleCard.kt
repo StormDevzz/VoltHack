@@ -125,7 +125,7 @@ class ModuleCard(val module: Module) {
             if (setting.isVisible()) {
                 // Clips rendering naturally to follow the slide animation
                 if (sy + sh - (y + VoltHackTheme.CARD_HEIGHT + 4) <= drawH) {
-                    SettingWidget.render(ctx, setting, x + 4, sy, width - 8)
+                    SettingWidget.render(ctx, setting, x + 4, sy, width - 8, mouseX, mouseY)
                 }
             }
             sy += sh

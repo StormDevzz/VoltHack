@@ -1,4 +1,4 @@
-package volthack.mixin;
+package volthack.mixin.render;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Gui;
@@ -14,6 +14,7 @@ public abstract class MixinInGameHUD {
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         HUDManager.INSTANCE.render(context);
+        volthack.util.render.NotificationManager.INSTANCE.render(context);
     }
 
     @Inject(method = "renderHotbarAndDecorations(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V", at = @At("HEAD"), cancellable = true)

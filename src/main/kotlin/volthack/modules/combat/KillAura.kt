@@ -33,7 +33,7 @@ object KillAura : Module("KillAura", "Attacks entities around you automatically"
         EventBus.listen<TickEvent> { onTick() }
     }
 
-    private var currentTarget: LivingEntity? = null
+    var currentTarget: LivingEntity? = null
 
     private fun onTick() {
         if (!enabled) return

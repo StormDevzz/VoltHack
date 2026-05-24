@@ -67,22 +67,26 @@ class VoltMainMenu : Screen(Component.literal("VoltHack Main Menu")) {
         val cx = width / 2f
         val bw = 220f; val bh = 38f
         val gap = 10f
-        val startY = height / 2f + 10f
+        val startY = height / 2f - 25f
 
         buttons = listOf(
             MenuButton(cx - bw / 2, startY, bw, bh,
+                Component.literal("VoltHack ClickGUI")) {
+                Minecraft.getInstance().setScreen(volthack.gui.ClickGUI())
+            },
+            MenuButton(cx - bw / 2, startY + (bh + gap) * 1, bw, bh,
                 Component.translatable("menu.singleplayer")) {
                 Minecraft.getInstance().setScreen(SelectWorldScreen(this))
             },
-            MenuButton(cx - bw / 2, startY + (bh + gap) * 1, bw, bh,
+            MenuButton(cx - bw / 2, startY + (bh + gap) * 2, bw, bh,
                 Component.translatable("menu.multiplayer")) {
                 Minecraft.getInstance().setScreen(JoinMultiplayerScreen(this))
             },
-            MenuButton(cx - bw / 2, startY + (bh + gap) * 2, bw, bh,
+            MenuButton(cx - bw / 2, startY + (bh + gap) * 3, bw, bh,
                 Component.translatable("menu.options")) {
                 Minecraft.getInstance().setScreen(OptionsScreen(this, Minecraft.getInstance().options))
             },
-            MenuButton(cx - bw / 2, startY + (bh + gap) * 3, bw, bh,
+            MenuButton(cx - bw / 2, startY + (bh + gap) * 4, bw, bh,
                 Component.translatable("menu.quit")) {
                 Minecraft.getInstance().stop()
             }

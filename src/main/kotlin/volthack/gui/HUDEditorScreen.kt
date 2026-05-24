@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.KeyEvent
 import net.minecraft.client.input.MouseButtonEvent
+import net.minecraft.client.input.CharacterEvent
 import net.minecraft.network.chat.Component
 import org.lwjgl.glfw.GLFW
 import volthack.gui.font.GUIFontRenderer
@@ -118,7 +119,7 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
                     else -> 26
                 }
                 if (setting.isVisible()) {
-                    volthack.gui.component.SettingWidget.render(ctx, setting, s2x + 4, sy, 152)
+                    volthack.gui.component.SettingWidget.render(ctx, setting, s2x + 4, sy, 152, mx, my)
                 }
                 sy += sh
             }
@@ -210,6 +211,7 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
     }
 
     override fun mouseDragged(event: MouseButtonEvent, deltaX: Double, deltaY: Double): Boolean {
+        if (volthack.gui.component.SettingWidget.mouseDragged(event.x().toInt(), event.y().toInt(), event.button())) return true
         val element = dragTarget ?: return false
         val (mx, my) = getMouseCoordinates()
 
@@ -218,7 +220,17 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
         return true
     }
 
+    override fun charTyped(characterEvent: CharacterEvent): Boolean {
+        if (volthack.gui.component.SettingWidget.activeInputSetting != null) {
+            if (volthack.gui.component.SettingWidget.charTyped(characterEvent)) return true
+        }
+        return super.charTyped(characterEvent)
+    }
+
     override fun keyPressed(event: KeyEvent): Boolean {
+        if (volthack.gui.component.SettingWidget.activeInputSetting != null) {
+            if (volthack.gui.component.SettingWidget.keyPressed(event)) return true
+        }
         if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_RIGHT_SHIFT) {
             HUDManager.save()
             onClose()

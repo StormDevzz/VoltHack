@@ -1,4 +1,4 @@
-package volthack.mixin;
+package volthack.mixin.menu;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
