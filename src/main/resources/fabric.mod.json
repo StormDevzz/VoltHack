@@ -1,0 +1,23 @@
+{
+    "schemaVersion": 1,
+    "id": "volthack",
+    "version": "${version}",
+    "name": "VoltHack",
+    "description": "VoltHack Minecraft Client by StormDevzz",
+    "authors": [{"name": "StormDevzz", "role": "Organization"}],
+    "contact": {
+        "homepage": "https://github.com/StormDevzz",
+        "sources": "https://github.com/StormDevzz/VoltHack",
+        "issues": "https://github.com/StormDevzz/VoltHack/issues"
+    },
+    "environment": "client",
+    "entrypoints": {
+        "client": ["volthack.VoltHack"]
+    },
+    "mixins": ["volthack.mixins.json"],
+    "accessWidener": "volthack.accesswidener",
+    "depends": {
+        "fabricloader": ">=${loader_version}",
+        "minecraft": ">=${minecraft_version}"
+    }
+}
