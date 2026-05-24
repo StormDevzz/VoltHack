@@ -17,8 +17,18 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
     private var dragOffX = 0
     private var dragOffY = 0
     private val snapSize = 5
+    private var selectedElement: HUDElement? = null
+
+    private fun getMouseCoordinates(): Pair<Int, Int> {
+        val mc = Minecraft.getInstance()
+        val window = mc.window
+        val mx = (mc.mouseHandler.xpos() * window.guiScaledWidth / window.width).toInt()
+        val my = (mc.mouseHandler.ypos() * window.guiScaledHeight / window.height).toInt()
+        return Pair(mx, my)
+    }
 
     override fun render(ctx: GuiGraphics, mouseX: Int, mouseY: Int, delta: Float) {
+        val (mx, my) = getMouseCoordinates()
         ctx.fill(0, 0, width, height, 0x90000000.toInt())
 
         for (element in HUDManager.getAll()) {
@@ -27,7 +37,7 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
             val h = element.cachedHeight
             if (w <= 0 || h <= 0) continue
 
-            val isHovered = mouseX in element.x..element.x + w && mouseY in element.y..element.y + h
+            val isHovered = mx in element.x..element.x + w && my in element.y..element.y + h
             val borderColor = when {
                 element == dragTarget -> VoltHackTheme.accent
                 isHovered -> VoltHackTheme.accentDim
@@ -47,11 +57,11 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
             }
         }
 
-        renderSidebar(ctx, mouseX, mouseY)
-        super.render(ctx, mouseX, mouseY, delta)
+        renderSidebar(ctx, mx, my)
+        super.render(ctx, mx, my, delta)
     }
 
-    private fun renderSidebar(ctx: GuiGraphics, mouseX: Int, mouseY: Int) {
+    private fun renderSidebar(ctx: GuiGraphics, mx: Int, my: Int) {
         val sx = width - 160
         ctx.fill(sx, 0, width, height, VoltHackTheme.background)
 
@@ -59,8 +69,16 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
 
         var cy = 30
         for (element in HUDManager.getAll()) {
-            val hovered = mouseX in (sx + 4)..width && mouseY in cy..cy + 20
-            if (hovered) ctx.fill(sx + 4, cy, width - 4, cy + 20, VoltHackTheme.surfaceHover)
+            val hovered = mx in (sx + 4)..width && my in cy..cy + 20
+            val isSelected = element == selectedElement
+            val cardBg = when {
+                isSelected -> VoltHackTheme.surfaceLight
+                hovered -> VoltHackTheme.surfaceHover
+                else -> VoltHackTheme.background
+            }
+            if (cardBg != VoltHackTheme.background) {
+                ctx.fill(sx + 4, cy, width - 4, cy + 20, cardBg)
+            }
 
             val icon = if (element.enabled) "\u25CF" else "\u25CB"
             val iconColor = if (element.enabled) VoltHackTheme.accent else VoltHackTheme.textDisabled
@@ -71,23 +89,78 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
         }
 
         val resetY = height - 40
-        val resetHover = mouseX in (sx + 10)..(width - 10) && mouseY in resetY..resetY + 28
+        val resetHover = mx in (sx + 10)..(width - 10) && my in resetY..resetY + 28
         ctx.fill(sx + 10, resetY, width - 10, resetY + 28, if (resetHover) VoltHackTheme.surfaceHover else VoltHackTheme.surface)
         GUIFontRenderer.drawCentered(ctx, "Reset Positions", (sx + 80f), (resetY + 10).toFloat(), VoltHackTheme.textSecondary)
+
+        // Render secondary Settings sidebar if an element is selected
+        val elem = selectedElement
+        if (elem != null) {
+            val s2x = width - 320
+            ctx.fill(s2x, 0, sx, height, VoltHackTheme.surface)
+            ctx.fill(sx - 1, 0, sx, height, VoltHackTheme.border)
+
+            GUIFontRenderer.drawCentered(
+                ctx,
+                "${elem.name} Settings",
+                (s2x + 80f),
+                10f,
+                VoltHackTheme.accent,
+                false
+            )
+
+            var sy = 30
+            for (setting in elem.settings) {
+                val sh = when (setting) {
+                    is volthack.setting.Setting.Float, is volthack.setting.Setting.Int -> 32
+                    else -> 26
+                }
+                if (setting.isVisible()) {
+                    volthack.gui.component.SettingWidget.render(ctx, setting, s2x + 4, sy, 152)
+                }
+                sy += sh
+            }
+        }
     }
 
     override fun mouseClicked(event: MouseButtonEvent, isInside: Boolean): Boolean {
-        val mx = event.x().toInt()
-        val my = event.y().toInt()
+        val (mx, my) = getMouseCoordinates()
         val button = event.button()
 
+        // Interaction inside Settings sidebar
+        if (selectedElement != null && mx in (width - 320)..(width - 160)) {
+            val elem = selectedElement!!
+            var sy = 30
+            for (setting in elem.settings) {
+                val sh = when (setting) {
+                    is volthack.setting.Setting.Float, is volthack.setting.Setting.Int -> 32
+                    else -> 26
+                }
+                if (setting.isVisible()) {
+                    if (volthack.gui.component.SettingWidget.mouseClicked(mx, my, setting, width - 316, sy, 152, button)) {
+                        HUDManager.save()
+                        return true
+                    }
+                }
+                sy += sh
+            }
+            return true
+        }
+
+        // Interaction inside HUD Elements list sidebar
         if (mx >= width - 160) {
             var cy = 30
             for (element in HUDManager.getAll()) {
-                if (mx in (width - 156)..width && my in cy..cy + 20 && button == 0) {
-                    element.enabled = !element.enabled
-                    HUDManager.save()
-                    return true
+                if (mx in (width - 156)..width && my in cy..cy + 20) {
+                    if (button == 0) {
+                        element.enabled = !element.enabled
+                        selectedElement = element
+                        HUDManager.save()
+                        return true
+                    } else if (button == 1) {
+                        selectedElement = if (selectedElement == element) null else element
+                        return true
+                    }
                 }
                 cy += 22
             }
@@ -100,6 +173,7 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
             return super.mouseClicked(event, isInside)
         }
 
+        // Interaction on HUD viewport components
         for (element in HUDManager.getAll().reversed()) {
             val w = element.cachedWidth
             val h = element.cachedHeight
@@ -110,18 +184,20 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
                 dragTarget = element
                 dragOffX = mx - element.x
                 dragOffY = my - element.y
+                selectedElement = element
                 return true
             } else if (button == 1) {
-                element.enabled = !element.enabled
-                HUDManager.save()
+                selectedElement = if (selectedElement == element) null else element
                 return true
             }
         }
 
+        selectedElement = null
         return super.mouseClicked(event, isInside)
     }
 
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
+        volthack.gui.component.SettingWidget.mouseReleased()
         if (dragTarget != null) {
             dragTarget = null
             HUDManager.save()
@@ -131,12 +207,10 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
 
     override fun mouseDragged(event: MouseButtonEvent, deltaX: Double, deltaY: Double): Boolean {
         val element = dragTarget ?: return false
+        val (mx, my) = getMouseCoordinates()
 
-        val mx = event.x().toInt() - dragOffX
-        val my = event.y().toInt() - dragOffY
-
-        element.x = (mx / snapSize) * snapSize
-        element.y = (my / snapSize) * snapSize
+        element.x = ((mx - dragOffX) / snapSize) * snapSize
+        element.y = ((my - dragOffY) / snapSize) * snapSize
         return true
     }
 

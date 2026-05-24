@@ -23,6 +23,8 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
     private var scrollOffset = 0
     private var maxScroll = 0
     private var inputConfigName = ""
+    private var activeTabX = 0f
+    private var activeTabW = 0f
 
     override fun init() {
         super.init()
@@ -167,7 +169,29 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
     private fun renderTabs(ctx: GuiGraphics, mouseX: Int, mouseY: Int) {
         ctx.fill(0, 0, width, VoltHackTheme.TAB_HEIGHT, VoltHackTheme.background)
 
+        // Smooth active tab transition calculations
+        var targetX = 0f
+        var targetW = 0f
         var tx = VoltHackTheme.PANEL_PADDING
+        for (cat in Category.entries) {
+            val tw = GUIFontRenderer.width(cat.displayName) + VoltHackTheme.TAB_PADDING * 2 + 8
+            if (cat == selectedCategory) {
+                targetX = tx.toFloat()
+                targetW = tw.toFloat()
+                break
+            }
+            tx += tw + 4
+        }
+
+        if (activeTabX == 0f) {
+            activeTabX = targetX
+            activeTabW = targetW
+        } else {
+            activeTabX += (targetX - activeTabX) * 0.18f
+            activeTabW += (targetW - activeTabW) * 0.18f
+        }
+
+        tx = VoltHackTheme.PANEL_PADDING
         for (cat in Category.entries) {
             val text = cat.displayName
             val tw = GUIFontRenderer.width(text) + VoltHackTheme.TAB_PADDING * 2 + 8
@@ -175,11 +199,13 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
             val color = if (selected) (VoltHackTheme.categoryColors[cat] ?: VoltHackTheme.accent) else VoltHackTheme.textSecondary
 
             ctx.fill(tx, 0, tx + tw, VoltHackTheme.TAB_HEIGHT, if (selected) VoltHackTheme.surfaceLight else VoltHackTheme.background)
-            ctx.fill(tx, VoltHackTheme.TAB_HEIGHT - 2, tx + tw, VoltHackTheme.TAB_HEIGHT, color)
             GUIFontRenderer.drawCentered(ctx, text, (tx + tw / 2f), (VoltHackTheme.TAB_HEIGHT - GUIFontRenderer.height) / 2f, color)
 
             tx += tw + 4
         }
+
+        val activeColor = VoltHackTheme.categoryColors[selectedCategory] ?: VoltHackTheme.accent
+        ctx.fill(activeTabX.toInt(), VoltHackTheme.TAB_HEIGHT - 3, (activeTabX + activeTabW).toInt(), VoltHackTheme.TAB_HEIGHT, activeColor)
     }
 
     override fun charTyped(characterEvent: CharacterEvent): Boolean {
@@ -273,8 +299,8 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
             if (mx in card.x..card.x + VoltHackTheme.CARD_WIDTH &&
                 adjY in card.y..card.y + card.height
             ) {
-                if (card.expanded && button == 0) {
-                    if (card.mouseClicked(mx, adjY)) return true
+                if (card.expanded) {
+                    if (card.mouseClicked(mx, adjY, button)) return true
                 }
 
                 if (button == 0) {

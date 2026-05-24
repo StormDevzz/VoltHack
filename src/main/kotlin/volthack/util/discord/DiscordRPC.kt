@@ -79,6 +79,12 @@ object DiscordRPC {
         }
     }
 
+    val discordUsername: String?
+        get() = try { client?.currentUser?.name } catch (e: Exception) { null }
+
+    val discordAvatarUrl: String?
+        get() = try { client?.currentUser?.avatarUrl } catch (e: Exception) { null }
+
     fun stop() {
         try {
             client?.close()

@@ -29,13 +29,13 @@ object SettingWidget {
         }
     }
 
-    fun mouseClicked(mouseX: Int, mouseY: Int, setting: Setting<*>, x: Int, y: Int, width: Int): Boolean {
+    fun mouseClicked(mouseX: Int, mouseY: Int, setting: Setting<*>, x: Int, y: Int, width: Int, button: Int = 0): Boolean {
         if (!setting.isVisible()) return false
         return when (setting) {
             is Setting.Boolean -> clickBoolean(mouseX, mouseY, setting, x, y, width)
             is Setting.Float -> clickFloat(mouseX, mouseY, setting, x, y, width)
             is Setting.Int -> clickInt(mouseX, mouseY, setting, x, y, width)
-            is Setting.Mode -> clickMode(mouseX, mouseY, setting, x, y, width)
+            is Setting.Mode -> clickMode(mouseX, mouseY, setting, x, y, width, button)
             else -> false
         }
     }
@@ -155,10 +155,14 @@ object SettingWidget {
         return false
     }
 
-    private fun clickMode(mx: Int, my: Int, s: Setting.Mode, x: Int, y: Int, width: Int): Boolean {
+    private fun clickMode(mx: Int, my: Int, s: Setting.Mode, x: Int, y: Int, width: Int, button: Int): Boolean {
         if (my in y..y + 26) {
             val idx = s.modes.indexOf(s.value).coerceAtLeast(0)
-            s.value = s.modes[(idx + 1) % s.modes.size]
+            if (button == 1) {
+                s.value = s.modes[(idx - 1 + s.modes.size) % s.modes.size]
+            } else {
+                s.value = s.modes[(idx + 1) % s.modes.size]
+            }
             return true
         }
         return false

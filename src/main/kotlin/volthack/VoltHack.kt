@@ -31,6 +31,8 @@ class VoltHack : ClientModInitializer {
         val used = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
         LOGGER.debug("Memory: ${used}MB used / ${runtime.maxMemory() / 1024 / 1024}MB max")
 
+
+
         // 1. Load languages
         LoadingState.step(0.10f, "Loading languages...",
             "[1/7] Loading language files...")
@@ -59,8 +61,12 @@ class VoltHack : ClientModInitializer {
         LoadingState.step(0.55f, "Initializing HUD...",
             "[4/7] Initializing HUD elements...")
         LOGGER.info("[4/7] Initializing HUD elements...")
-        HUDManager.register(WatermarkElement())
-        HUDManager.register(ArrayListElement())
+        HUDManager.register(volthack.hud.elements.WatermarkElement())
+        HUDManager.register(volthack.hud.elements.ArrayListElement())
+        HUDManager.register(volthack.hud.elements.CoordsElement())
+        HUDManager.register(volthack.hud.elements.PlayerViewElement())
+        HUDManager.register(volthack.hud.elements.IndicatorsElement())
+        HUDManager.register(volthack.hud.elements.CompanionElement())
         HUDManager.load()
         LOGGER.info("       -> ${HUDManager.getAll().size} HUD elements loaded")
 
