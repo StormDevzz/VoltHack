@@ -57,7 +57,7 @@ class VoltHack : ClientModInitializer {
         ModuleConfig.init()
         ModuleManager.loadConfigs()
 
-        // 4. Initialize HUD
+                // 4. Initialize HUD
         LoadingState.step(0.55f, "Initializing HUD...",
             "[4/7] Initializing HUD elements...")
         LOGGER.info("[4/7] Initializing HUD elements...")
@@ -66,7 +66,13 @@ class VoltHack : ClientModInitializer {
         HUDManager.register(volthack.hud.elements.CoordsElement())
         HUDManager.register(volthack.hud.elements.PlayerViewElement())
         HUDManager.register(volthack.hud.elements.IndicatorsElement())
-        HUDManager.register(volthack.hud.elements.CompanionElement())
+        HUDManager.register(volthack.hud.elements.FPSElement())
+        HUDManager.register(volthack.hud.elements.HotbarElement())
+        HUDManager.register(volthack.hud.elements.KillFeedElement())
+        HUDManager.register(volthack.hud.elements.TargetRenderElement())
+        HUDManager.register(volthack.hud.elements.ItemCounterElement())
+        HUDManager.register(volthack.hud.elements.CrosshairElement())
+        HUDManager.register(volthack.hud.elements.InvPreviewElement())
         HUDManager.load()
         LOGGER.info("       -> ${HUDManager.getAll().size} HUD elements loaded")
 

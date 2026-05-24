@@ -21,6 +21,8 @@ object ModuleManager {
         for (module in modules) {
             val data = ModuleConfig.load(module.name)
 
+            module.bindKey = data.bindKey
+
             when (module.autoEnable) {
                 AutoEnable.ALWAYS -> {
                     module.enabled = true
@@ -42,12 +44,12 @@ object ModuleManager {
             }
 
             if (ModuleConfig.isFirstLaunch && module.autoEnable != AutoEnable.ALWAYS) {
-                ModuleConfig.save(module.name, ModuleConfig.ModuleData(enabled = module.enabled))
+                ModuleConfig.save(module.name, ModuleConfig.ModuleData(enabled = module.enabled, bindKey = module.bindKey))
             }
 
             module.onStateChanged = { mod ->
                 if (mod.autoEnable != AutoEnable.ALWAYS) {
-                    ModuleConfig.save(mod.name, ModuleConfig.ModuleData(enabled = mod.enabled))
+                    ModuleConfig.save(mod.name, ModuleConfig.ModuleData(enabled = mod.enabled, bindKey = mod.bindKey))
                 }
             }
         }

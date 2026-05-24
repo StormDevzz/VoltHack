@@ -2,5 +2,7 @@ accessWidener v2 named
 
 # Minecraft
 accessible class net/minecraft/client/Minecraft
+accessible class net/minecraft/client/Options
+accessible field net/minecraft/client/Options framerateLimit Lnet/minecraft/client/OptionInstance;
 
 

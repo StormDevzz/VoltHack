@@ -18,7 +18,7 @@ class CoordsElement : HUDElement("Coords") {
         enabled = false
     }
 
-    override fun render(ctx: GuiGraphics) {
+    override fun draw(ctx: GuiGraphics) {
         val mc = Minecraft.getInstance()
         val player = mc.player ?: return
 

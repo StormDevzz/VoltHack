@@ -31,6 +31,10 @@ object ConfigLoader {
                         }
                     }
 
+                    if (moduleObj.has("bindKey")) {
+                        module.bindKey = moduleObj.get("bindKey").asInt
+                    }
+
                     if (moduleObj.has("enabled")) {
                         val enabled = moduleObj.get("enabled").asBoolean
                         if (enabled) module.enable() else module.disable()

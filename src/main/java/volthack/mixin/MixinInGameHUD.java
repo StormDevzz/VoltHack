@@ -15,4 +15,20 @@ public abstract class MixinInGameHUD {
     private void onRender(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         HUDManager.INSTANCE.render(context);
     }
+
+    @Inject(method = "renderHotbarAndDecorations(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V", at = @At("HEAD"), cancellable = true)
+    private void onRenderHotbar(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        volthack.hud.HUDElement hotbar = HUDManager.INSTANCE.get("Hotbar");
+        if (hotbar != null && hotbar.getEnabled()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "renderCrosshair(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V", at = @At("HEAD"), cancellable = true)
+    private void onRenderCrosshair(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        volthack.hud.HUDElement crosshair = HUDManager.INSTANCE.get("Crosshair");
+        if (crosshair != null && crosshair.getEnabled()) {
+            ci.cancel();
+        }
+    }
 }

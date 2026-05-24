@@ -20,7 +20,8 @@ object ModuleConfig {
         private set
 
     data class ModuleData(
-        val enabled: Boolean = false
+        val enabled: Boolean = false,
+        val bindKey: Int = 0
     )
 
     fun init() {

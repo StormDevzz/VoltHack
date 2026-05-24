@@ -24,8 +24,7 @@ class ModuleCard(val module: Module) {
 
     private val settingsHeight: Int
         get() {
-            if (module.settings.isEmpty()) return 0
-            var h = 0
+            var h = 26 // Keybind row height
             for (s in module.settings) {
                 if (!s.isVisible()) continue
                 h += when (s) {
@@ -94,6 +93,30 @@ class ModuleCard(val module: Module) {
 
         ctx.fill(x, sy, x + width, sy + drawH - 4, VoltHackTheme.surfaceLight)
 
+        // 1. Render the Keybind Row
+        val bindH = 26
+        if (sy + bindH - (y + VoltHackTheme.CARD_HEIGHT + 4) <= drawH) {
+            ctx.fill(x + 4, sy, x + width - 4, sy + bindH, 0x10000000.toInt())
+            GUIFontRenderer.draw(ctx, "Bind", (x + 8).toFloat(), (sy + 7).toFloat(), VoltHackTheme.textSecondary)
+            
+            val active = volthack.manager.InputManager.bindTargetModule == module
+            val bindText = if (active) "..." else volthack.manager.InputManager.getBindName(module.bindKey)
+            val btnW = 54
+            val btnX = x + width - 8 - btnW
+            val btnY = sy + 4
+            val btnH = 18
+            val isHovered = mouseX in btnX..(btnX + btnW) && mouseY in btnY..(btnY + btnH)
+            
+            val btnBg = when {
+                active -> VoltHackTheme.accent
+                isHovered -> VoltHackTheme.surfaceHover
+                else -> VoltHackTheme.surface
+            }
+            ctx.fill(btnX, btnY, btnX + btnW, btnY + btnH, btnBg)
+            GUIFontRenderer.drawCentered(ctx, bindText, (btnX + btnW / 2f), (btnY + (btnH - GUIFontRenderer.height) / 2f), VoltHackTheme.textPrimary)
+        }
+        sy += bindH
+
         for (setting in module.settings) {
             val sh = when (setting) {
                 is Setting.Float, is Setting.Int -> 32
@@ -112,13 +135,30 @@ class ModuleCard(val module: Module) {
     fun mouseClicked(mx: Int, my: Int, button: Int): Boolean {
         if (!expanded || settingsAnim < 0.5f) return false
         var sy = y + VoltHackTheme.CARD_HEIGHT + 4
+
+        // 1. Check Keybind Row Click
+        val bindH = 26
+        val bindBtnW = 54
+        val bindBtnX = x + width - 8 - bindBtnW
+        val bindBtnY = sy + 4
+        val bindBtnH = 18
+        if (mx in bindBtnX..(bindBtnX + bindBtnW) && my in bindBtnY..(bindBtnY + bindBtnH)) {
+            if (volthack.manager.InputManager.bindTargetModule == module) {
+                volthack.manager.InputManager.bindTargetModule = null
+            } else {
+                volthack.manager.InputManager.bindTargetModule = module
+            }
+            return true
+        }
+        sy += bindH
+
         for (setting in module.settings) {
             val sh = when (setting) {
                 is Setting.Float, is Setting.Int -> 32
                 else -> 26
             }
             if (setting.isVisible()) {
-                if (SettingWidget.mouseClicked(mx, my, setting, x + 4, sy, width - 8, button)) return true
+                if (SettingWidget.mouseClicked(mx, sy, setting, x + 4, sy, width - 8, button)) return true
             }
             sy += sh
         }

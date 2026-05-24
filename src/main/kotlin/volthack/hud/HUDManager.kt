@@ -23,7 +23,6 @@ object HUDManager {
 
     fun render(ctx: GuiGraphics) {
         for (element in elements) {
-            if (!element.enabled) continue
             element.render(ctx)
         }
     }

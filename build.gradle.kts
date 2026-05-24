@@ -39,7 +39,19 @@ loom {
             client()
             configName = "Client"
             ideConfigGenerated(true)
-            vmArgs("-Xmx2G", "-XX:+UseG1GC")
+            vmArgs(
+                "-Xmx2048M",
+                "-Xms512M",
+                "-XX:+UseG1GC",
+                "-XX:MaxGCPauseMillis=20",
+                "-XX:InitiatingHeapOccupancyPercent=45",
+                "-XX:G1ReservePercent=15",
+                "-XX:ReservedCodeCacheSize=256M",
+                "-XX:MaxMetaspaceSize=256M",
+                "-XX:CICompilerCount=4",
+                "-XX:CompressedClassSpaceSize=128M",
+                "-XX:MaxDirectMemorySize=512M"
+            )
         }
     }
 }

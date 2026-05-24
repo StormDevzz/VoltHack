@@ -9,8 +9,10 @@ import net.minecraft.world.entity.monster.Enemy
 import net.minecraft.world.entity.animal.Animal
 import volthack.event.EventBus
 import volthack.event.TickEvent
+import volthack.manager.RotationManager
 import volthack.setting.Category
 import volthack.setting.Module
+import volthack.util.combat.attack.AttackUtil
 import kotlin.math.atan2
 import kotlin.math.sqrt
 
@@ -21,7 +23,6 @@ object KillAura : Module("KillAura", "Attacks entities around you automatically"
     
     // Rotations settings
     private val rotations by boolean("Rotations", true, "Enable rotations toward targets")
-    private val rotMode by mode("Rotation Mode", listOf("Snap", "Track", "Alternative"), "Track")
     private val rotVis by mode("Rotation Vis", listOf("Client", "Server"), "Client")
 
     private val targetPlayers by boolean("Players", true, "Target other players")
@@ -34,14 +35,6 @@ object KillAura : Module("KillAura", "Attacks entities around you automatically"
 
     private var currentTarget: LivingEntity? = null
 
-    // Helper to wrap degrees to range [-180, 180) to prevent 360-degree rotation glitches
-    private fun wrapDegrees(value: Float): Float {
-        var deg = value % 360f
-        if (deg >= 180f) deg -= 360f
-        if (deg < -180f) deg += 360f
-        return deg
-    }
-
     private fun onTick() {
         if (!enabled) return
 
@@ -53,12 +46,13 @@ object KillAura : Module("KillAura", "Attacks entities around you automatically"
         val targets = (world.entitiesForRendering() as Iterable<Entity>)
             .filterIsInstance<LivingEntity>()
             .filter { it != player && !it.isDeadOrDying }
-            .filter { player.distanceTo(it) <= range }
+            .filter { AttackUtil.isEntityInRange(it, range) }
             .filter { isValidTarget(it) }
             .sortedBy { player.distanceTo(it) }
 
         if (targets.isEmpty()) {
             currentTarget = null
+            RotationManager.reset()
             return
         }
 
@@ -74,31 +68,15 @@ object KillAura : Module("KillAura", "Attacks entities around you automatically"
         val targetYaw = (Math.toDegrees(atan2(diffZ, diffX)) - 90.0).toFloat()
         val targetPitch = (-Math.toDegrees(atan2(diffY, dist))).toFloat()
 
-        // Handle continuous rotations (Track, Alternative) on tick
         if (rotations) {
-            when (rotMode) {
-                "Track" -> {
-                    if (rotVis == "Client") {
-                        player.yRot = targetYaw
-                        player.yRotO = targetYaw
-                        player.xRot = targetPitch
-                        player.xRotO = targetPitch
-                    }
-                }
-                "Alternative" -> {
-                    val speed = 0.25f
-                    val deltaYaw = wrapDegrees(targetYaw - player.yRot)
-                    val deltaPitch = wrapDegrees(targetPitch - player.xRot)
-                    if (rotVis == "Client") {
-                        player.yRot += deltaYaw * speed
-                        player.xRot += deltaPitch * speed
-                    }
-                }
-            }
+            val isSilent = rotVis == "Server"
+            RotationManager.setRotations(targetYaw, targetPitch, isSilent)
+        } else {
+            RotationManager.reset()
         }
 
         // Cooldown check to ensure maximum damage on every hit
-        if (cooldown && player.getAttackStrengthScale(0.5f) < 0.95f) {
+        if (cooldown && !AttackUtil.isWeaponCharged()) {
             return
         }
 
@@ -120,57 +98,14 @@ object KillAura : Module("KillAura", "Attacks entities around you automatically"
 
     private fun attack(player: Player, target: Entity) {
         val mc = Minecraft.getInstance()
-        
-        var appliedYaw = player.yRot
-        var appliedPitch = player.xRot
-        
         if (rotations) {
-            val diffX = target.x - player.x
-            val diffY = (target.eyeY - 0.4) - (player.y + player.eyeHeight)
-            val diffZ = target.z - player.z
-            val dist = sqrt(diffX * diffX + diffZ * diffZ)
-            val targetYaw = (Math.toDegrees(atan2(diffZ, diffX)) - 90.0).toFloat()
-            val targetPitch = (-Math.toDegrees(atan2(diffY, dist))).toFloat()
-            
-            when (rotMode) {
-                "Snap" -> {
-                    appliedYaw = targetYaw
-                    appliedPitch = targetPitch
-                }
-                "Track" -> {
-                    appliedYaw = targetYaw
-                    appliedPitch = targetPitch
-                }
-                "Alternative" -> {
-                    val speed = 0.25f
-                    val deltaYaw = wrapDegrees(targetYaw - player.yRot)
-                    val deltaPitch = wrapDegrees(targetPitch - player.xRot)
-                    appliedYaw = player.yRot + deltaYaw * speed
-                    appliedPitch = player.xRot + deltaPitch * speed
-                }
+            RotationManager.runRotation {
+                mc.gameMode?.attack(player, target)
+                player.swing(InteractionHand.MAIN_HAND)
             }
-        }
-
-        val prevYaw = player.yRot
-        val prevPitch = player.xRot
-
-        // Apply visual or silent rotations right before calling attack
-        if (rotations) {
-            player.yRot = appliedYaw
-            player.xRot = appliedPitch
-            if (rotVis == "Client") {
-                player.yRotO = appliedYaw
-                player.xRotO = appliedPitch
-            }
-        }
-
-        mc.gameMode?.attack(player, target)
-        player.swing(InteractionHand.MAIN_HAND)
-
-        // If silent rotation (Server), restore client-side view instantly
-        if (rotations && rotVis == "Server") {
-            player.yRot = prevYaw
-            player.xRot = prevPitch
+        } else {
+            mc.gameMode?.attack(player, target)
+            player.swing(InteractionHand.MAIN_HAND)
         }
     }
 }

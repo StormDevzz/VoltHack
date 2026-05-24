@@ -14,6 +14,7 @@ object ConfigSaver {
         for (module in ModuleManager.getAll()) {
             val moduleObj = JsonObject()
             moduleObj.addProperty("enabled", module.enabled)
+            moduleObj.addProperty("bindKey", module.bindKey)
             
             val settingsObj = JsonObject()
             for (setting in module.settings) {

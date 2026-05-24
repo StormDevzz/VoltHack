@@ -13,6 +13,7 @@ abstract class Module(
     val autoEnable: AutoEnable = AutoEnable.NORMAL
 ) {
     var enabled = false
+    var bindKey: Int = 0
 
     val settings = mutableListOf<Setting<*>>()
 
@@ -81,6 +82,7 @@ enum class Category(val displayName: String) {
     MOVEMENT("Movement"),
     RENDER("Render"),
     PLAYER("Player"),
+    MISC("Misc"),
     WORLD("World"),
     CONFIGS("Configs")
 }

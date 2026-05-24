@@ -37,7 +37,9 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
             val h = element.cachedHeight
             if (w <= 0 || h <= 0) continue
 
-            val isHovered = mx in element.x..element.x + w && my in element.y..element.y + h
+            val rx = element.renderX.toInt()
+            val ry = element.renderY.toInt()
+            val isHovered = mx in rx..rx + w && my in ry..ry + h
             val borderColor = when {
                 element == dragTarget -> VoltHackTheme.accent
                 isHovered -> VoltHackTheme.accentDim
@@ -45,13 +47,13 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
                 else -> VoltHackTheme.textDisabled
             }
 
-            ctx.fill(element.x - 1, element.y - 1, element.x + w + 1, element.y + h + 1, borderColor)
+            ctx.fill(rx - 1, ry - 1, rx + w + 1, ry + h + 1, borderColor)
 
             if (!element.enabled) {
-                ctx.fill(element.x, element.y, element.x + w, element.y + h, 0x50000000.toInt())
+                ctx.fill(rx, ry, rx + w, ry + h, 0x50000000.toInt())
                 GUIFontRenderer.drawCentered(
                     ctx, "\u2715 ${element.name}",
-                    (element.x + w / 2f), (element.y + h / 2f - 4f),
+                    (rx + w / 2f), (ry + h / 2f - 4f),
                     VoltHackTheme.textDisabled
                 )
             }
@@ -178,7 +180,9 @@ class HUDEditorScreen : Screen(Component.literal("HUD Editor")) {
             val w = element.cachedWidth
             val h = element.cachedHeight
             if (w <= 0 || h <= 0) continue
-            if (mx !in element.x..element.x + w || my !in element.y..element.y + h) continue
+            val rx = element.renderX.toInt()
+            val ry = element.renderY.toInt()
+            if (mx !in rx..rx + w || my !in ry..ry + h) continue
 
             if (button == 0) {
                 dragTarget = element

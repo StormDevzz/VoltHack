@@ -70,7 +70,7 @@ class WatermarkElement : HUDElement("Watermark") {
         }
     }
 
-    override fun render(ctx: GuiGraphics) {
+    override fun draw(ctx: GuiGraphics) {
         val showDC = showDiscord && DiscordRPC.isConnected
         val dcName = DiscordRPC.discordUsername
         val dcAvatar = DiscordRPC.discordAvatarUrl

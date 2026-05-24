@@ -31,7 +31,7 @@ class ArrayListElement : HUDElement("ArrayList") {
         cachedScreenW = Minecraft.getInstance().window.guiScaledWidth
     }
 
-    override fun render(ctx: GuiGraphics) {
+    override fun draw(ctx: GuiGraphics) {
         val count = ModuleManager.getAll().count { it.enabled }
         if (count != lastEnabledCount) {
             lastEnabledCount = count

@@ -1,6 +1,9 @@
 package volthack.hud
 
+import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
+import volthack.gui.HUDEditorScreen
+import volthack.gui.ClickGUI
 import volthack.setting.Setting
 
 abstract class HUDElement(val name: String) {
@@ -10,9 +13,56 @@ abstract class HUDElement(val name: String) {
     var cachedWidth = 0
     var cachedHeight = 0
 
+    // Animation states
+    var renderX = 0f
+    var renderY = 0f
+    var currentOpacity = 0f
+    var scale = 0.95f
+
     val settings = mutableListOf<Setting<*>>()
 
-    abstract fun render(ctx: GuiGraphics)
+    abstract fun draw(ctx: GuiGraphics)
+
+    fun updateAnimation() {
+        val mc = Minecraft.getInstance()
+        val editorOpen = mc.screen is HUDEditorScreen || mc.screen is ClickGUI
+        
+        val targetOpacity = if (enabled) 1f else if (editorOpen) 0.4f else 0f
+        
+        val speed = 0.18f
+        
+        if (renderX == 0f || java.lang.Float.isNaN(renderX)) renderX = x.toFloat()
+        if (renderY == 0f || java.lang.Float.isNaN(renderY)) renderY = y.toFloat()
+        
+        renderX += (x - renderX) * speed
+        renderY += (y - renderY) * speed
+        currentOpacity += (targetOpacity - currentOpacity) * speed
+        
+        val targetScale = if (editorOpen || currentOpacity > 0.1f) 1.0f else 0.95f
+        scale += (targetScale - scale) * speed
+    }
+
+    fun render(ctx: GuiGraphics) {
+        updateAnimation()
+        if (currentOpacity <= 0.01f) return
+
+        val stack = (ctx as volthack.mixin.GuiGraphicsAccessor).pose
+        stack.pushMatrix()
+
+        // 1. Position translation
+        stack.translate(renderX - x, renderY - y)
+
+        // 2. Scale centered on element
+        val centerX = x + cachedWidth / 2f
+        val centerY = y + cachedHeight / 2f
+        stack.translate(centerX, centerY)
+        stack.scale(scale, scale)
+        stack.translate(-centerX, -centerY)
+
+        draw(ctx)
+
+        stack.popMatrix()
+    }
 
     protected fun boolean(
         name: String,

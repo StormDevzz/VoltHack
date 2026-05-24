@@ -4,7 +4,18 @@
     "minVersion": "0.8",
     "package": "volthack.mixin",
     "compatibilityLevel": "JAVA_21",
-    "mixins": ["MixinMinecraftClient", "MixinInGameHUD", "MixinTitleScreen", "MixinWindowIcon", "MixinLoadingOverlay"],
+    "mixins": [
+        "MixinMinecraftClient",
+        "MixinInGameHUD",
+        "MixinTitleScreen",
+        "MixinWindowIcon",
+        "MixinLoadingOverlay",
+        "MixinCamera",
+        "MixinEntity",
+        "MixinKeyboard",
+        "MixinMouse",
+        "GuiGraphicsAccessor"
+    ],
     "client": [],
     "server": [],
     "injectors": {
