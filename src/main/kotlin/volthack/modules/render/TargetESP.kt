@@ -15,8 +15,7 @@ import volthack.util.render.Render3DUtil
 import kotlin.math.sin
 import kotlin.math.PI
 
-object TargetESP : Module("TargetESP", "Highlights target with a beautiful 3D rotating circle", Category.RENDER) {
-    private val espMode by mode("Style", listOf("Ring", "Band", "GlowBand"), "GlowBand")
+object TargetESP : Module("TargetESP", "Highlights target with a 3D rotating ring", Category.RENDER) {
     private val colorMode by mode("Color Mode", listOf("Static", "Rainbow"), "Static")
     private val customColor by color("Color", 0xFF6C63FF.toInt())
     
@@ -84,34 +83,12 @@ object TargetESP : Module("TargetESP", "Highlights target with a beautiful 3D ro
 
         val spinAngle = (time * 0.001 * spinSpeed)
 
-        when (espMode) {
-            "Ring" -> {
-                Render3DUtil.drawRing(
-                    renderX, renderY + yOffset, renderZ,
-                    radius,
-                    r, g, b, alpha,
-                    spinAngle,
-                    throughWalls
-                )
-            }
-            "Band" -> {
-                Render3DUtil.drawBand(
-                    renderX, renderY + yOffset, renderZ,
-                    radius, 0.15f,
-                    r, g, b, alpha,
-                    spinAngle,
-                    throughWalls
-                )
-            }
-            "GlowBand" -> {
-                Render3DUtil.drawGlowBand(
-                    renderX, renderY + yOffset, renderZ,
-                    radius, 0.25f,
-                    r, g, b, alpha,
-                    spinAngle,
-                    throughWalls
-                )
-            }
-        }
+        Render3DUtil.drawRing(
+            renderX, renderY + yOffset, renderZ,
+            radius,
+            r, g, b, alpha,
+            spinAngle,
+            throughWalls
+        )
     }
 }

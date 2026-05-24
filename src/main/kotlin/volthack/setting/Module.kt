@@ -97,6 +97,12 @@ abstract class Module(
         default: kotlin.Int = 0xFFFFFFFF.toInt(),
         description: String = ""
     ) = Setting.Color(name, description, default).also { settings.add(it) }
+
+    protected fun text(
+        name: String,
+        default: kotlin.String = "",
+        description: String = ""
+    ) = Setting.StringSetting(name, description, default).also { settings.add(it) }
 }
 
 enum class Category(val displayName: String) {

@@ -48,6 +48,7 @@ object SettingWidget {
             is Setting.Int -> renderInt(ctx, setting, x, y, width)
             is Setting.Mode -> renderMode(ctx, setting, x, y, width)
             is Setting.Color -> renderColor(ctx, setting, x, y, width)
+            is Setting.StringSetting -> renderString(ctx, setting, x, y, width)
         }
     }
 
@@ -69,6 +70,7 @@ object SettingWidget {
             is Setting.Float -> clickFloat(mouseX, mouseY, setting, x, y, width)
             is Setting.Int -> clickInt(mouseX, mouseY, setting, x, y, width)
             is Setting.Mode -> clickMode(mouseX, mouseY, setting, x, y, width, button)
+            is Setting.StringSetting -> false
             else -> false
         }
     }
@@ -154,6 +156,13 @@ object SettingWidget {
         } catch (e: Exception) {
             // Ignore
         }
+    }
+
+    fun resetState() {
+        activeInputSetting = null
+        inputText = ""
+        dragging = null
+        hoveredSetting = null
     }
 
     private fun checkFocusLoss(mx: Int, my: Int, x: Int, y: Int, w: Int, h: Int) {
@@ -272,10 +281,15 @@ object SettingWidget {
         ctx.fill(x + width - 22, y + 4, x + width - 6, y + 20, 0x40000000.toInt())
     }
 
+    private fun renderString(ctx: GuiGraphics, s: Setting.StringSetting, x: Int, y: Int, width: Int) {
+        ctx.fill(x, y, x + width, y + 26, 0x10000000.toInt())
+        GUIFontRenderer.draw(ctx, s.name, (x + 4).toFloat(), (y + 4).toFloat(), VoltHackTheme.textSecondary)
+        val display = if (s.value.length > 20) s.value.take(17) + "..." else s.value
+        GUIFontRenderer.draw(ctx, display, (x + 4).toFloat(), (y + 14).toFloat(), VoltHackTheme.accent)
+    }
+
     private fun clickBoolean(mx: Int, my: Int, s: Setting.Boolean, x: Int, y: Int, width: Int): Boolean {
-        val toggleX = x + width - 28
-        val toggleY = y + 5
-        if (mx in toggleX..toggleX + 24 && my in toggleY..toggleY + 14) {
+        if (my in y..y + 26 && mx in x..x + width) {
             s.value = !s.value
             return true
         }

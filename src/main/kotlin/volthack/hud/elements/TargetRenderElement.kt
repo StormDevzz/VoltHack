@@ -10,6 +10,8 @@ import net.minecraft.world.phys.HitResult
 import volthack.gui.font.GUIFontRenderer
 import volthack.gui.theme.VoltHackTheme
 import volthack.hud.HUDElement
+import volthack.modules.combat.KillAura
+import volthack.modules.combat.Trigger
 import kotlin.math.roundToInt
 
 class TargetRenderElement : HUDElement("TargetRender") {
@@ -17,6 +19,8 @@ class TargetRenderElement : HUDElement("TargetRender") {
     
     var currentTarget: LivingEntity? = null
     private var lastHitTime = 0L
+    private var cachedName: String? = null
+    private var cachedTargetId: Int = -1
 
     init {
         x = 400
@@ -26,109 +30,115 @@ class TargetRenderElement : HUDElement("TargetRender") {
         enabled = false
     }
 
-    override fun draw(ctx: GuiGraphics) {
+    private fun detectTarget(): LivingEntity? {
         val mc = Minecraft.getInstance()
-        val player = mc.player ?: return
-        val world = mc.level ?: return
+        val player = mc.player ?: return null
 
-        // 1. Detect if player attacks a living entity
+        // 1. Check KillAura target
+        if (KillAura.enabled && KillAura.currentTarget != null) {
+            return KillAura.currentTarget
+        }
+
+        // 2. Check Trigger target
+        if (Trigger.enabled && Trigger.currentTarget != null) {
+            return Trigger.currentTarget
+        }
+
+        // 3. Detect manual attacks
         if (mc.options.keyAttack.isDown && mc.hitResult?.type == HitResult.Type.ENTITY) {
             val hit = mc.hitResult as? EntityHitResult
             val entity = hit?.entity
             if (entity is LivingEntity && entity != player) {
-                currentTarget = entity
-                lastHitTime = System.currentTimeMillis()
+                return entity
             }
+        }
+
+        return currentTarget
+    }
+
+    override fun draw(ctx: GuiGraphics) {
+        val mc = Minecraft.getInstance()
+        val player = mc.player ?: return
+
+        val newTarget = detectTarget()
+        if (newTarget != null && newTarget != currentTarget) {
+            currentTarget = newTarget
+            lastHitTime = System.currentTimeMillis()
+            cachedName = null
         }
 
         val target = currentTarget ?: return
 
-        // 2. Hide target if it's dead, removed from world, or has not been hit for 8 seconds
         val now = System.currentTimeMillis()
         if (target.isDeadOrDying || !target.isAlive || now - lastHitTime > 8000) {
             currentTarget = null
+            cachedName = null
             return
         }
 
         cachedWidth = 170
         cachedHeight = 65
 
-        // Draw card background
         ctx.fill(x, y, x + cachedWidth, y + cachedHeight, VoltHackTheme.surface)
         ctx.fill(x, y, x + cachedWidth, y + 1, customColor)
 
-        // Draw 3D Target Entity model
         try {
             val scale = 20
             InventoryScreen.renderEntityInInventoryFollowsMouse(
                 ctx,
-                x + 5,
-                y + 5,
-                x + 45,
-                y + cachedHeight - 5,
-                scale,
-                0.0625f,
-                0f,
-                0f,
-                target
+                x + 5, y + 5,
+                x + 45, y + cachedHeight - 5,
+                scale, 0.0625f, 0f, 0f, target
             )
-        } catch (e: Exception) {
-            // fallback in case rendering fails
-        }
+        } catch (e: Exception) {}
 
-        // Draw Target Name
-        val nameText = target.name.string
+        val nameText = if (target.id == cachedTargetId && cachedName != null) cachedName!! else {
+            target.name.string.also { cachedName = it; cachedTargetId = target.id }
+        }
         val nameX = x + 50f
         var cy = y + 6f
         GUIFontRenderer.draw(ctx, nameText, nameX, cy, VoltHackTheme.textPrimary)
         cy += GUIFontRenderer.height + 4f
 
-        // Draw Health Bar
         val hp = target.health
         val maxHp = target.maxHealth.coerceAtLeast(1f)
         val hpPct = (hp / maxHp).coerceIn(0f, 1f)
-        
+
         val barX = x + 50
         val barY = cy.toInt()
         val barWidth = 110
         val barHeight = 6
-        
-        // draw background bar
+
         ctx.fill(barX, barY, barX + barWidth, barY + barHeight, VoltHackTheme.surfaceLight)
-        // draw filled bar
         val hpColor = when {
-            hpPct > 0.5f -> 0xFF2ED573.toInt() // Green
-            hpPct > 0.2f -> 0xFFFFA502.toInt() // Orange
-            else -> 0xFFFF4757.toInt() // Red
+            hpPct > 0.5f -> 0xFF2ED573.toInt()
+            hpPct > 0.2f -> 0xFFFFA502.toInt()
+            else -> 0xFFFF4757.toInt()
         }
         ctx.fill(barX, barY, barX + (barWidth * hpPct).toInt(), barY + barHeight, hpColor)
-        
+
         cy += barHeight + 4f
 
-        // Draw Health Text
         val hpText = "${hp.roundToInt()} / ${maxHp.roundToInt()} HP"
         GUIFontRenderer.draw(ctx, hpText, nameX, cy, VoltHackTheme.textSecondary)
         cy += GUIFontRenderer.height + 4f
 
-        // Draw Target Armor and Hand Items
         var itemX = x + 50
         val itemY = cy.toInt() - 2
-        
-        val itemsToDraw = listOf(
-            target.mainHandItem,
-            target.offhandItem,
-            target.getItemBySlot(EquipmentSlot.HEAD),
-            target.getItemBySlot(EquipmentSlot.CHEST),
-            target.getItemBySlot(EquipmentSlot.LEGS),
-            target.getItemBySlot(EquipmentSlot.FEET)
+
+        val itemsToDraw = listOfNotNull(
+            target.mainHandItem.let { if (it.isEmpty) null else it },
+            target.offhandItem.let { if (it.isEmpty) null else it },
+            target.getItemBySlot(EquipmentSlot.HEAD).let { if (it.isEmpty) null else it },
+            target.getItemBySlot(EquipmentSlot.CHEST).let { if (it.isEmpty) null else it },
+            target.getItemBySlot(EquipmentSlot.LEGS).let { if (it.isEmpty) null else it },
+            target.getItemBySlot(EquipmentSlot.FEET).let { if (it.isEmpty) null else it }
         )
 
         for (stack in itemsToDraw) {
-            if (stack != null && !stack.isEmpty) {
-                ctx.renderItem(stack, itemX, itemY)
-                ctx.renderItemDecorations(mc.font, stack, itemX, itemY)
-                itemX += 18
-            }
+            ctx.renderItem(stack, itemX, itemY)
+            ctx.renderItemDecorations(mc.font, stack, itemX, itemY)
+            itemX += 18
         }
     }
 }

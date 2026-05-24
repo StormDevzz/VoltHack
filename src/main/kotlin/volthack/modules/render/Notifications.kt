@@ -37,7 +37,7 @@ object Notifications : Module("Notifications", "Handles in-game notifications ov
             return
         }
 
-        val currentPlayers = level.players.filter { it != player && it.isAlive }
+        val currentPlayers = level.players().filter { it != player && it.isAlive }
         val currentPlayerNames = currentPlayers.map { it.name.string }.toSet()
 
         // Detect entering players

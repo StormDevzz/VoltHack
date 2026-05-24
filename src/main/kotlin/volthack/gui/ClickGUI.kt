@@ -308,16 +308,35 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
             if (mx in card.x..card.x + VoltHackTheme.CARD_WIDTH &&
                 adjY in card.y..card.y + card.height
             ) {
-                if (card.expanded) {
-                    if (card.mouseClicked(mx, adjY, button)) return true
+                val inHeaderArea = adjY < card.y + VoltHackTheme.CARD_HEIGHT
+
+                // Right-click on header toggles expand/collapse
+                if (button == 1 && inHeaderArea) {
+                    val wasExpanded = card.expanded
+                    cards.forEach { it.expanded = false }
+                    SettingWidget.resetState()
+                    card.expanded = !wasExpanded
+                    return true
                 }
 
-                if (button == 0) {
+                // Right-click on settings: try settings first. If not handled -> collapse
+                if (button == 1 && !inHeaderArea) {
+                    if (card.mouseClicked(mx, adjY, 1)) return true
+                    cards.forEach { it.expanded = false }
+                    SettingWidget.resetState()
+                    card.expanded = false
+                    return true
+                }
+
+                // Left-click on header toggles module
+                if (button == 0 && inHeaderArea) {
                     card.module.toggle()
                     return true
-                } else if (button == 1 && card.module.settings.isNotEmpty()) {
-                    card.expanded = !card.expanded
-                    return true
+                }
+
+                // Left-click on expanded settings interacts with settings
+                if (button == 0 && card.expanded) {
+                    if (card.mouseClicked(mx, adjY, 0)) return true
                 }
             }
         }

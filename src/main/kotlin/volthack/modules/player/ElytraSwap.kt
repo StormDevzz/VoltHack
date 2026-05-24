@@ -7,7 +7,7 @@ import net.minecraft.world.item.Items
 import volthack.setting.Category
 import volthack.setting.Module
 
-object ElytraSwap : Module("ElytraSwap", "Swaps chestplate with elytra", Category.PLAYER) {
+object ElytraSwap : Module("ElytraSwap", "Swaps chestplate/elytra", Category.PLAYER) {
     private val mode by mode("Mode", listOf("Swap", "EquipElytra", "EquipChestplate"), "Swap")
 
     override fun onEnable() {

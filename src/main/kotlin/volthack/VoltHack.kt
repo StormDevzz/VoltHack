@@ -7,12 +7,15 @@ import net.minecraft.client.Minecraft
 import org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import volthack.command.CommandManager
 import volthack.gui.ClickGUI
 import volthack.gui.loading.LoadingState
 import volthack.hud.HUDManager
 import volthack.hud.elements.ArrayListElement
+import volthack.hud.elements.ChatElement
 import volthack.hud.elements.WatermarkElement
 import volthack.lang.LanguageManager
+import volthack.manager.FriendManager
 import volthack.modules.ModRegistry
 import volthack.setting.ModuleConfig
 import volthack.setting.ModuleManager
@@ -57,11 +60,19 @@ class VoltHack : ClientModInitializer {
         ModuleConfig.init()
         ModuleManager.loadConfigs()
 
-                // 4. Initialize HUD
+        // 4. Initialize Friend Manager
+        LoadingState.step(0.48f, "Loading friends...",
+            "[3.5/7] Loading friend list...")
+        LOGGER.info("[3.5/7] Loading friend list...")
+        FriendManager.load()
+        CommandManager.init()
+
+        // 5. Initialize HUD
         LoadingState.step(0.55f, "Initializing HUD...",
             "[4/7] Initializing HUD elements...")
         LOGGER.info("[4/7] Initializing HUD elements...")
         HUDManager.register(volthack.hud.elements.WatermarkElement())
+        HUDManager.register(volthack.hud.elements.ChatElement())
         HUDManager.register(volthack.hud.elements.ArrayListElement())
         HUDManager.register(volthack.hud.elements.CoordsElement())
         HUDManager.register(volthack.hud.elements.PlayerViewElement())
@@ -73,23 +84,24 @@ class VoltHack : ClientModInitializer {
         HUDManager.register(volthack.hud.elements.ItemCounterElement())
         HUDManager.register(volthack.hud.elements.CrosshairElement())
         HUDManager.register(volthack.hud.elements.InvPreviewElement())
+        HUDManager.register(volthack.hud.elements.ArmorElement())
         HUDManager.load()
         LOGGER.info("       -> ${HUDManager.getAll().size} HUD elements loaded")
 
-        // 5. Check GitHub
+        // 6. Check GitHub
         LoadingState.step(0.70f, "Checking GitHub...",
             "[5/7] Checking GitHub connectivity...")
         LOGGER.info("[5/7] Checking GitHub connectivity...")
         thread { checkGitHub() }
 
-        // 6. Setup keybinds
+        // 7. Setup keybinds
         LoadingState.step(0.82f, "Setting up keybinds...",
             "[6/7] Setting up keybinds...")
         LOGGER.info("[6/7] Setting up keybinds...")
         LOGGER.info("       -> ClickGUI: RSHIFT")
         LOGGER.info("       -> DiscordStatus: toggle in GUI")
 
-        // 7. Initialize Discord
+        // 8. Initialize Discord
         LoadingState.step(0.92f, "Connecting Discord...",
             "[7/7] Initializing Discord RPC...")
         LOGGER.info("[7/7] Initializing Discord RPC...")

@@ -12,7 +12,7 @@ import volthack.setting.Category
 import volthack.setting.Module
 import volthack.util.combat.attack.AttackUtil
 
-object Trigger : Module("Trigger", "Attacks target under your crosshair automatically", Category.COMBAT) {
+object Trigger : Module("Trigger", "Attacks target under crosshair", Category.COMBAT) {
     private val range by float("Range", 4.0f, 1.0f, 6.0f, 0.1f)
     private val cooldown by boolean("Smart Cooldown", true, "Attacks only when weapon is fully charged")
     private val targetPlayers by boolean("Players", true)

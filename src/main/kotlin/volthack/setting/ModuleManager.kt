@@ -15,7 +15,7 @@ object ModuleManager {
     fun getAll(): List<Module> = modules.toList()
 
     fun getByCategory(category: Category): List<Module> =
-        modules.filter { it.category == category }
+        modules.filter { it.category == category }.sortedBy { it.name }
 
     fun loadConfigs() {
         for (module in modules) {

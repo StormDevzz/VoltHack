@@ -59,6 +59,7 @@ object HUDManager {
                                 is volthack.setting.Setting.Int -> setting.value = (savedVal as Number).toInt()
                                 is volthack.setting.Setting.Mode -> setting.value = savedVal as String
                                 is volthack.setting.Setting.Color -> setting.value = (savedVal as Number).toInt()
+                                is volthack.setting.Setting.StringSetting -> setting.value = savedVal as String
                             }
                         } catch (e: Exception) {
                             // ignore loading error for single key mismatch

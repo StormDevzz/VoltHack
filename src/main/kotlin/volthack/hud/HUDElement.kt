@@ -31,8 +31,8 @@ abstract class HUDElement(val name: String) {
         
         val speed = 0.18f
         
-        if (renderX == 0f || java.lang.Float.isNaN(renderX)) renderX = x.toFloat()
-        if (renderY == 0f || java.lang.Float.isNaN(renderY)) renderY = y.toFloat()
+        if (renderX == 0f && x != 0) renderX = x.toFloat()
+        if (renderY == 0f && y != 0) renderY = y.toFloat()
         
         renderX += (x - renderX) * speed
         renderY += (y - renderY) * speed
@@ -49,10 +49,8 @@ abstract class HUDElement(val name: String) {
         val stack = (ctx as volthack.mixin.render.GuiGraphicsAccessor).pose
         stack.pushMatrix()
 
-        // 1. Position translation
         stack.translate(renderX - x, renderY - y)
 
-        // 2. Scale centered on element
         val centerX = x + cachedWidth / 2f
         val centerY = y + cachedHeight / 2f
         stack.translate(centerX, centerY)

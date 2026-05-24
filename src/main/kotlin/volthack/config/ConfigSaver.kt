@@ -24,6 +24,7 @@ object ConfigSaver {
                     is Setting.Int -> settingsObj.addProperty(setting.name, setting.value)
                     is Setting.Mode -> settingsObj.addProperty(setting.name, setting.value)
                     is Setting.Color -> settingsObj.addProperty(setting.name, setting.value)
+                    is Setting.StringSetting -> settingsObj.addProperty(setting.name, setting.value)
                 }
             }
             moduleObj.add("settings", settingsObj)

@@ -11,14 +11,12 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class KillFeedElement : HUDElement("KillFeed") {
     private val customColor by color("Color", 0xFF6C63FF.toInt())
-    private val showMockKills by boolean("Show Mock Kills", true)
 
     private val skullLoc = Identifier.tryParse("volthack:textures/skull.png") ?: Identifier.tryParse("volthack:textures/volthack.png")!!
 
     data class KillEntry(val name: String, val timestamp: Long)
 
     private val killsList = CopyOnWriteArrayList<KillEntry>()
-    private val recordedDeathIds = mutableSetOf<Int>()
 
     init {
         x = 4
@@ -33,16 +31,12 @@ class KillFeedElement : HUDElement("KillFeed") {
         val player = mc.player
         val world = mc.level
 
-        // Local tracking of deaths when active in a world
         if (player != null && world != null) {
             for (entity in world.entitiesForRendering()) {
                 if (entity is LivingEntity && entity != player) {
                     if ((entity.isDeadOrDying || entity.health <= 0) && entity.lastHurtByMob == player) {
-                        val entityId = entity.id
-                        if (entityId !in recordedDeathIds) {
-                            recordedDeathIds.add(entityId)
-                            val name = entity.name.string
-                            // Add new kill entry (limit list to last 5 kills for neat layout)
+                        val name = entity.name.string
+                        if (killsList.isEmpty() || killsList.first().name != name) {
                             killsList.add(0, KillEntry(name, System.currentTimeMillis()))
                             if (killsList.size > 5) {
                                 killsList.removeAt(killsList.size - 1)
@@ -53,27 +47,16 @@ class KillFeedElement : HUDElement("KillFeed") {
             }
         }
 
-        // Get actual or mock kills
-        val displayKills = if (killsList.isEmpty() && showMockKills) {
-            listOf(
-                KillEntry("StormDevzz", System.currentTimeMillis()),
-                KillEntry("Gamer123", System.currentTimeMillis()),
-                KillEntry("NoobSlayer", System.currentTimeMillis())
-            )
-        } else {
-            killsList
-        }
-
-        val totalKillsText = "Kills: ${if (killsList.isEmpty()) displayKills.size else killsList.size}"
+        val totalKillsText = "Kills: ${killsList.size}"
         
         var maxW = GUIFontRenderer.width(totalKillsText)
-        for (k in displayKills) {
+        for (k in killsList) {
             val entryW = 16 + GUIFontRenderer.width(k.name) // 12px skull + 4px gap
             if (entryW > maxW) maxW = entryW
         }
 
         cachedWidth = maxW + 16
-        cachedHeight = 8 + GUIFontRenderer.height + 6 + (displayKills.size * (GUIFontRenderer.height + 4))
+        cachedHeight = 8 + GUIFontRenderer.height + 6 + (killsList.size * (GUIFontRenderer.height + 4))
 
         // Draw card background
         ctx.fill(x, y, x + cachedWidth, y + cachedHeight, VoltHackTheme.surface)
@@ -86,7 +69,7 @@ class KillFeedElement : HUDElement("KillFeed") {
         cy += GUIFontRenderer.height + 6f
 
         // Draw each kill with the skull icon
-        for (k in displayKills) {
+        for (k in killsList) {
             val skullX = x + 8
             val skullY = cy.toInt() + (GUIFontRenderer.height - 12) / 2
             

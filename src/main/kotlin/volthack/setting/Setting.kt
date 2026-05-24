@@ -52,4 +52,10 @@ sealed class Setting<T>(
         description: String = "",
         defaultValue: kotlin.Int = 0xFF6C63FF.toInt()
     ) : Setting<kotlin.Int>(name, description, defaultValue)
+
+    class StringSetting(
+        name: String,
+        description: String = "",
+        defaultValue: kotlin.String = ""
+    ) : Setting<kotlin.String>(name, description, defaultValue)
 }

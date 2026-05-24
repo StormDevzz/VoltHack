@@ -26,6 +26,7 @@ object ConfigLoader {
                                     is Setting.Int -> setting.value = element.asInt
                                     is Setting.Mode -> setting.value = element.asString
                                     is Setting.Color -> setting.value = element.asInt
+                                    is Setting.StringSetting -> setting.value = element.asString
                                 }
                             }
                         }

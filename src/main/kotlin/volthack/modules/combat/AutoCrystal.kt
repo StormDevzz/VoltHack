@@ -14,7 +14,7 @@ import volthack.setting.Category
 import volthack.setting.Module
 import volthack.util.combat.crystal.CrystalUtil
 
-object AutoCrystal : Module("AutoCrystal", "Places and breaks crystals to deal massive damage", Category.COMBAT) {
+object AutoCrystal : Module("AutoCrystal", "Place/break End Crystals", Category.COMBAT) {
     private val range by float("Range", 4.5f, 1.0f, 6.0f, 0.1f)
     private val breakDelay by int("Break Delay (ms)", 50, 0, 500)
     private val placeDelay by int("Place Delay (ms)", 50, 0, 500)

@@ -10,7 +10,7 @@ import volthack.setting.ModuleManager
 
 object PotatoMode : Module(
     name = "PotatoMode",
-    description = "Optimizes performance and RAM usage for weak laptops",
+    description = "Performance optimizer",
     category = Category.MISC,
     autoEnable = AutoEnable.ALWAYS
 ) {

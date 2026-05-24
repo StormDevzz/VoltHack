@@ -146,24 +146,24 @@ class IndicatorsElement : HUDElement("Indicators") {
     }
 
     private fun drawBackdropCircle(ctx: GuiGraphics, cx: Int, cy: Int, radius: Int) {
-        val segments = 24
+        val segments = 16
         for (i in 0 until segments) {
             val angle = i * (2 * Math.PI) / segments
             val rx = cx + radius * Math.cos(angle)
             val ry = cy + radius * Math.sin(angle)
-            ctx.fill(rx.toInt() - 1, ry.toInt() - 1, rx.toInt() + 1, ry.toInt() + 1, 0x1AFFFFFF.toInt())
+            ctx.fill(rx.toInt(), ry.toInt(), rx.toInt() + 1, ry.toInt() + 1, 0x1AFFFFFF.toInt())
         }
     }
 
     private fun drawProgressRing(ctx: GuiGraphics, cx: Int, cy: Int, radius: Int, pct: Float, color: Int) {
-        val segments = 36
+        val segments = 24
         val activeSegments = (pct * segments).toInt().coerceIn(0, segments)
+        if (activeSegments == 0) return
         for (i in 0 until activeSegments) {
-            // Start from top (-90 degrees)
             val angle = -Math.PI / 2 + i * (2 * Math.PI) / segments
             val rx = cx + radius * Math.cos(angle)
             val ry = cy + radius * Math.sin(angle)
-            ctx.fill(rx.toInt() - 1, ry.toInt() - 1, rx.toInt() + 1, ry.toInt() + 1, color)
+            ctx.fill(rx.toInt(), ry.toInt(), rx.toInt() + 1, ry.toInt() + 1, color)
         }
     }
 }
