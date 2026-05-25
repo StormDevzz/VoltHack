@@ -185,36 +185,36 @@ jobs:
           
           # Format compile status info block dynamically
           if [ -z "$BUILD_STATUS" ]; then
-            STATUS_STR="⚠️ SKIPPED (Setup Error)"
+            STATUS_STR="SKIPPED (Setup Error)"
             ARTIFACT_STR="Build skipped due to setup/checkout environment failure."
             COLOR=16776960 # Volt Neon Yellow
           elif [ "$BUILD_STATUS" = "success" ]; then
-            STATUS_STR="✅ SUCCESS (${BUILD_DURATION}s)"
-            ARTIFACT_STR="📦 \`$JAR_NAME\` (${JAR_SIZE})"
+            STATUS_STR="SUCCESS (${BUILD_DURATION}s)"
+            ARTIFACT_STR="\`$JAR_NAME\` (${JAR_SIZE})"
             COLOR=3796756 # Volt Neon Green
           else
-            STATUS_STR="❌ FAILED (${BUILD_DURATION}s)"
-            ARTIFACT_STR="⚠️ Build failed, no artifact generated."
+            STATUS_STR="FAILED (${BUILD_DURATION}s)"
+            ARTIFACT_STR="Build failed, no artifact generated."
             COLOR=16724787 # Volt Neon Red
           fi
           
           # Format release status info block dynamically
           if [ "$RELEASE_OUTCOME" = "success" ]; then
-            RELEASE_STR="🚀 RE-CREATED (\`$RELEASE_VERSION\` / \`$RELEASE_TAG\`)"
+            RELEASE_STR="RE-CREATED (\`$RELEASE_VERSION\` / \`$RELEASE_TAG\`)"
             if [ "$DELETE_STATUS" = "deleted/cleaned" ]; then
               RELEASE_STR="$RELEASE_STR (Existing old release cleaned up)"
             fi
           elif [ "$RELEASE_OUTCOME" = "failure" ]; then
-            RELEASE_STR="❌ FAILED (Check Action Logs)"
+            RELEASE_STR="FAILED (Check Action Logs)"
             COLOR=16724787 # Volt Neon Red
           elif [ "$RELEASE_OUTCOME" = "skipped" ]; then
             if [ "$BUILD_STATUS" = "success" ]; then
-              RELEASE_STR="⏭️ SKIPPED (Not main/master branch)"
+              RELEASE_STR="SKIPPED (Not main/master branch)"
             else
-              RELEASE_STR="⏭️ SKIPPED (Compilation Failed)"
+              RELEASE_STR="SKIPPED (Compilation Failed)"
             fi
           else
-            RELEASE_STR="⏭️ SKIPPED"
+            RELEASE_STR="SKIPPED"
           fi
           
           PAYLOAD=$(jq -n \
@@ -243,7 +243,7 @@ jobs:
                   { name: "Compilation Status", value: $status, inline: true },
                   { name: "Release Management", value: $release, inline: false },
                   { name: "Build Artifact", value: $artifact, inline: false },
-                  { name: "GitHub Actions Run Logs", value: ("⚡ [View Workflow Run Logs](" + $run_url + ")"), inline: false }
+                  { name: "GitHub Actions Run Logs", value: ("[View Workflow Run Logs](" + $run_url + ")"), inline: false }
                 ],
                 author: {
                   name: $pusher,
