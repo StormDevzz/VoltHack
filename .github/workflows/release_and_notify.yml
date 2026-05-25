@@ -230,7 +230,7 @@ jobs:
             --arg release "$RELEASE_STR" \
             --arg run_url "$RUN_URL" \
             --arg timestamp "$TIMESTAMP" \
-            --argint color "$COLOR" \
+            --argjson color "$COLOR" \
             '{
               embeds: [{
                 title: $title,
@@ -329,7 +329,7 @@ jobs:
             --arg creator_icon "$CREATOR_ICON" \
             --arg action "$ISSUE_ACTION" \
             --arg timestamp "$TIMESTAMP" \
-            --argint color "$COLOR" \
+            --argjson color "$COLOR" \
             '{
               embeds: [{
                 title: $title,
