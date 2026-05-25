@@ -29,6 +29,7 @@ class VoltHack : ClientModInitializer {
     override fun onInitializeClient() {
         val start = System.currentTimeMillis()
         LOGGER.info("===== Initializing VoltHack v$version =====")
+
         LoadingState.reset()
         val runtime = Runtime.getRuntime()
         val used = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024

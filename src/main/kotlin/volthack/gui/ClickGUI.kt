@@ -86,13 +86,24 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
             card.render(ctx, mouseX, mouseY)
             card.y = originalY
 
-            if (card.hovered && card.module.description.isNotEmpty()) {
+            if (card.hovered) {
                 hoveredName = card.module.name
             }
         }
 
         if (hoveredName.isNotEmpty() && SettingWidget.hoveredSetting == null) {
-            val desc = LanguageManager.get("module.$hoveredName.description")
+            val descKey = "module.$hoveredName.description"
+            val descTranslation = LanguageManager.get(descKey)
+            val desc = if (descTranslation != descKey) {
+                descTranslation
+            } else {
+                val module = cards.find { it.module.name == hoveredName }?.module
+                if (module != null && module.description.isNotEmpty()) {
+                    module.description
+                } else {
+                    "No description available."
+                }
+            }
             TooltipRenderer.render(ctx, desc, mouseX, mouseY)
         }
 
@@ -310,21 +321,9 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
             ) {
                 val inHeaderArea = adjY < card.y + VoltHackTheme.CARD_HEIGHT
 
-                // Right-click on header toggles expand/collapse
+                // Right-click on header opens the separate settings window GUI
                 if (button == 1 && inHeaderArea) {
-                    val wasExpanded = card.expanded
-                    cards.forEach { it.expanded = false }
-                    SettingWidget.resetState()
-                    card.expanded = !wasExpanded
-                    return true
-                }
-
-                // Right-click on settings: try settings first. If not handled -> collapse
-                if (button == 1 && !inHeaderArea) {
-                    if (card.mouseClicked(mx, adjY, 1)) return true
-                    cards.forEach { it.expanded = false }
-                    SettingWidget.resetState()
-                    card.expanded = false
+                    minecraft?.setScreen(ModuleSettingsScreen(card.module, this))
                     return true
                 }
 
@@ -332,11 +331,6 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
                 if (button == 0 && inHeaderArea) {
                     card.module.toggle()
                     return true
-                }
-
-                // Left-click on expanded settings interacts with settings
-                if (button == 0 && card.expanded) {
-                    if (card.mouseClicked(mx, adjY, 0)) return true
                 }
             }
         }

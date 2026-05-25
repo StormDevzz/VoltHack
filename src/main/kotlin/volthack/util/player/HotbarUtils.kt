@@ -70,4 +70,8 @@ object HotbarUtils {
         if (hotbarSlot !in 0..8) return
         InventoryUtils.click(invSlot, hotbarSlot, ClickType.SWAP)
     }
+
+    fun findAxe(): Int {
+        return find { it.item is net.minecraft.world.item.AxeItem }
+    }
 }

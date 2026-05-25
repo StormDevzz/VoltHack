@@ -2,6 +2,7 @@ package volthack.manager
 
 import net.minecraft.client.Minecraft
 import volthack.gui.ClickGUI
+import volthack.gui.ModuleSettingsScreen
 import volthack.setting.ModuleManager
 
 object InputManager {
@@ -11,7 +12,7 @@ object InputManager {
     fun onKey(key: Int, action: Int) {
         val mc = Minecraft.getInstance()
         if (mc.screen != null) {
-            if (mc.screen is ClickGUI && bindTargetModule != null) {
+            if ((mc.screen is ClickGUI || mc.screen is ModuleSettingsScreen) && bindTargetModule != null) {
                 if (action == 1) { // GLFW_PRESS
                     if (key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
                         bindTargetModule?.bindKey = 0
@@ -44,7 +45,7 @@ object InputManager {
         val bindCode = -button - 1
 
         if (mc.screen != null) {
-            if (mc.screen is ClickGUI && bindTargetModule != null) {
+            if ((mc.screen is ClickGUI || mc.screen is ModuleSettingsScreen) && bindTargetModule != null) {
                 if (action == 1) { // GLFW_PRESS
                     bindTargetModule?.bindKey = bindCode
                     val mod = bindTargetModule
@@ -72,7 +73,7 @@ object InputManager {
         if (yoffset == 0.0) return
 
         if (mc.screen != null) {
-            if (mc.screen is ClickGUI && bindTargetModule != null) {
+            if ((mc.screen is ClickGUI || mc.screen is ModuleSettingsScreen) && bindTargetModule != null) {
                 val bindCode = if (yoffset > 0.0) -100 else -101
                 bindTargetModule?.bindKey = bindCode
                 val mod = bindTargetModule

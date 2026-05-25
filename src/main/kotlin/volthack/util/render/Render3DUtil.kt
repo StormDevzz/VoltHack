@@ -16,7 +16,7 @@ object Render3DUtil {
     ) {
         val mc = Minecraft.getInstance()
         val bufferSource = mc.renderBuffers().bufferSource()
-        val renderType = if (throughWalls) RenderTypes.LINES_TRANSLUCENT else RenderTypes.LINES_TRANSLUCENT
+        val renderType = RenderTypes.lines()
         val consumer = bufferSource.getBuffer(renderType)
         val pose = PoseStack().last()
 
@@ -101,7 +101,7 @@ object Render3DUtil {
     ) {
         val mc = Minecraft.getInstance()
         val bufferSource = mc.renderBuffers().bufferSource()
-        val consumer = bufferSource.getBuffer(RenderTypes.LINES_TRANSLUCENT)
+        val consumer = bufferSource.getBuffer(RenderTypes.lines())
         val pose = PoseStack().last()
 
         val color = argb(r, g, b, a)
@@ -139,7 +139,7 @@ object Render3DUtil {
                 .setLineWidth(1.0f)
         }
 
-        bufferSource.endBatch(RenderTypes.LINES_TRANSLUCENT)
+        bufferSource.endBatch(RenderTypes.lines())
     }
 
     fun drawGlowBand(
@@ -151,7 +151,7 @@ object Render3DUtil {
     ) {
         val mc = Minecraft.getInstance()
         val bufferSource = mc.renderBuffers().bufferSource()
-        val consumer = bufferSource.getBuffer(RenderTypes.LINES_TRANSLUCENT)
+        val consumer = bufferSource.getBuffer(RenderTypes.lines())
         val pose = PoseStack().last()
 
         val segments = 32
@@ -188,7 +188,7 @@ object Render3DUtil {
                 .setLineWidth(1.0f)
         }
 
-        bufferSource.endBatch(RenderTypes.LINES_TRANSLUCENT)
+        bufferSource.endBatch(RenderTypes.lines())
     }
 
     private fun argb(r: Int, g: Int, b: Int, a: Int): Int {

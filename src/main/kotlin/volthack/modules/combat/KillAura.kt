@@ -28,6 +28,7 @@ object KillAura : Module("KillAura", "Attacks entities around you automatically"
     private val targetPlayers by boolean("Players", true, "Target other players")
     private val targetMonsters by boolean("Monsters", true, "Target hostile mobs")
     private val targetPassives by boolean("Passives", false, "Target passive mobs")
+    private val shieldBreak by boolean("Shield Break", true, "Swaps to axe to break shields")
 
     init {
         EventBus.listen<TickEvent> { onTick() }
@@ -98,14 +99,33 @@ object KillAura : Module("KillAura", "Attacks entities around you automatically"
 
     private fun attack(player: Player, target: Entity) {
         val mc = Minecraft.getInstance()
-        if (rotations) {
-            RotationManager.runRotation {
+        val isShieldBlocking = target is LivingEntity && target.isBlocking
+        
+        val performAttack = {
+            var attacked = false
+            if (shieldBreak && isShieldBlocking) {
+                val axeSlot = volthack.util.player.HotbarUtils.findAxe()
+                if (axeSlot != -1) {
+                    val oldSlot = volthack.util.player.HotbarUtils.selectedSlot
+                    volthack.util.player.HotbarUtils.select(axeSlot)
+                    mc.gameMode?.attack(player, target)
+                    player.swing(InteractionHand.MAIN_HAND)
+                    volthack.util.player.HotbarUtils.select(oldSlot)
+                    attacked = true
+                }
+            }
+            if (!attacked) {
                 mc.gameMode?.attack(player, target)
                 player.swing(InteractionHand.MAIN_HAND)
             }
+        }
+
+        if (rotations) {
+            RotationManager.runRotation {
+                performAttack()
+            }
         } else {
-            mc.gameMode?.attack(player, target)
-            player.swing(InteractionHand.MAIN_HAND)
+            performAttack()
         }
     }
 }

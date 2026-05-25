@@ -27,6 +27,7 @@ object NameTags : Module("NameTags", "Shows info tags above entities", Category.
     private val targetMonsters by boolean("Monsters", true)
     private val targetPassives by boolean("Passives", false)
     private val maxRange by float("Max Range", 64.0f, 8.0f, 128.0f, 4.0f)
+    private val scale by float("Scale", 1.0f, 0.5f, 3.0f, 0.1f)
 
     private data class TagData(
         val entity: LivingEntity,
@@ -97,6 +98,14 @@ object NameTags : Module("NameTags", "Shows info tags above entities", Category.
         for (tag in tags) {
             val x = tag.screenX
             val y = tag.screenY
+
+            val scaleVal = scale
+            val stack = (ctx as volthack.mixin.render.GuiGraphicsAccessor).pose
+            stack.pushMatrix()
+            stack.translate(x.toFloat(), y.toFloat())
+            stack.scale(scaleVal, scaleVal)
+            stack.translate(-x.toFloat(), -y.toFloat())
+
             val lineH = GUIFontRenderer.height + 2
 
             val lines = mutableListOf<Pair<String, Int>>()
@@ -176,6 +185,7 @@ object NameTags : Module("NameTags", "Shows info tags above entities", Category.
                     }
                 }
             }
+            stack.popMatrix()
         }
     }
 

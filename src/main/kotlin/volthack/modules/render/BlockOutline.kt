@@ -23,6 +23,20 @@ object BlockOutline : Module("BlockOutline", "Highlights the block you are looki
         EventBus.listen<Render3DEvent> { onRender3D(it) }
     }
 
+    fun getCurrentColor(): Int {
+        val time = System.currentTimeMillis()
+        return if (colorMode == "Rainbow") {
+            val hue = (time * 0.001f) % 1.0f
+            java.awt.Color.HSBtoRGB(hue, 0.8f, 1.0f)
+        } else {
+            customColor
+        }
+    }
+
+    fun getOutlineMode(): String {
+        return mode
+    }
+
     private fun onRender3D(event: Render3DEvent) {
         if (!enabled) return
 
@@ -40,20 +54,14 @@ object BlockOutline : Module("BlockOutline", "Highlights the block you are looki
         val renderY = pos.y - camPos.y
         val renderZ = pos.z - camPos.z + 0.5
 
-        val time = System.currentTimeMillis()
-        val baseColor = if (colorMode == "Rainbow") {
-            val hue = (time * 0.001f) % 1.0f
-            java.awt.Color.HSBtoRGB(hue, 0.8f, 1.0f)
-        } else {
-            customColor
-        }
+        val baseColor = getCurrentColor()
 
         val a = (baseColor shr 24 and 255).let { if (it == 0) 255 else it }
         val r = (baseColor shr 16 and 255)
         val g = (baseColor shr 8 and 255)
         val b = (baseColor and 255)
 
-        if (mode == "Outline" || mode == "Both") {
+        if ((mode == "Outline" || mode == "Both") && throughWalls) {
             Render3DUtil.drawBlockOutline(
                 renderX, renderY, renderZ,
                 1.0f, 1.0f,
@@ -74,3 +82,4 @@ object BlockOutline : Module("BlockOutline", "Highlights the block you are looki
         }
     }
 }
+

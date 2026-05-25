@@ -18,6 +18,7 @@ object Trigger : Module("Trigger", "Attacks target under crosshair", Category.CO
     private val targetPlayers by boolean("Players", true)
     private val targetMonsters by boolean("Monsters", true)
     private val targetPassives by boolean("Passives", false)
+    private val shieldBreak by boolean("Shield Break", true, "Swaps to axe to break shields")
 
     init {
         EventBus.listen<TickEvent> { onTick() }
@@ -39,6 +40,19 @@ object Trigger : Module("Trigger", "Attacks target under crosshair", Category.CO
         currentTarget = target
 
         if (cooldown && !AttackUtil.isWeaponCharged()) return
+
+        val isShieldBlocking = target.isBlocking
+        if (shieldBreak && isShieldBlocking) {
+            val axeSlot = volthack.util.player.HotbarUtils.findAxe()
+            if (axeSlot != -1) {
+                val oldSlot = volthack.util.player.HotbarUtils.selectedSlot
+                volthack.util.player.HotbarUtils.select(axeSlot)
+                mc.gameMode?.attack(player, target)
+                player.swing(InteractionHand.MAIN_HAND)
+                volthack.util.player.HotbarUtils.select(oldSlot)
+                return
+            }
+        }
 
         mc.gameMode?.attack(player, target)
         player.swing(InteractionHand.MAIN_HAND)

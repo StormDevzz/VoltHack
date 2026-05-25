@@ -27,10 +27,7 @@ class ModuleCard(val module: Module) {
             var h = 26
             for (s in module.settings) {
                 if (!s.isVisible()) continue
-                h += when (s) {
-                    is Setting.Float, is Setting.Int -> 32
-                    else -> 26
-                }
+                h += SettingWidget.getHeight(s)
             }
             return h + 8
         }
@@ -116,10 +113,7 @@ class ModuleCard(val module: Module) {
         sy += bindH
 
         for (setting in module.settings) {
-            val sh = when (setting) {
-                is Setting.Float, is Setting.Int -> 32
-                else -> 26
-            }
+            val sh = SettingWidget.getHeight(setting)
             if (setting.isVisible()) {
                 if (sy + sh - (y + VoltHackTheme.CARD_HEIGHT + 4) <= drawH) {
                     SettingWidget.render(ctx, setting, x + 4, sy, width - 8, mouseX, mouseY)
@@ -149,10 +143,7 @@ class ModuleCard(val module: Module) {
         sy += bindH
 
         for (setting in module.settings) {
-            val sh = when (setting) {
-                is Setting.Float, is Setting.Int -> 32
-                else -> 26
-            }
+            val sh = SettingWidget.getHeight(setting)
             if (setting.isVisible()) {
                 if (SettingWidget.mouseClicked(mx, my, setting, x + 4, sy, width - 8, button)) return true
             }

@@ -18,22 +18,42 @@ object SettingWidget {
     var inputText: String = ""
     private var inputAnim = 0f
 
+    var expandedColorSetting: Setting.Color? = null
+
+    private val PRESET_COLORS = intArrayOf(
+        0xFFFF6B6B.toInt(), // Soft Red
+        0xFFFF9F43.toInt(), // Sunset Orange
+        0xFFFECA57.toInt(), // Gold Yellow
+        0xFF1DD1A1.toInt(), // Emerald Green
+        0xFF00D2D3.toInt(), // Electric Teal
+        0xFF54A0FF.toInt(), // Sky Blue
+        0xFF5F27CD.toInt(), // Royal Purple
+        0xFFFF9FF3.toInt()  // Sakura Pink
+    )
+
     private data class Dragging(
         val setting: Setting<*>,
         val startMouseX: Int,
         val startValue: Float,
         val sliderX: Int,
-        val sliderW: Int
+        val sliderW: Int,
+        val type: String = "slider"
     )
+
+    fun getHeight(setting: Setting<*>): Int {
+        if (!setting.isVisible()) return 0
+        return when (setting) {
+            is Setting.Float, is Setting.Int -> 32
+            is Setting.Color -> if (expandedColorSetting == setting) 94 else 26
+            else -> 26
+        }
+    }
 
     @JvmOverloads
     fun render(ctx: GuiGraphics, setting: Setting<*>, x: Int, y: Int, width: Int, mouseX: Int = -999, mouseY: Int = -999) {
         if (!setting.isVisible()) return
 
-        val height = when (setting) {
-            is Setting.Float, is Setting.Int -> 32
-            else -> 26
-        }
+        val height = getHeight(setting)
 
         // Check hover for tooltip
         if (mouseX in x..x + width && mouseY in y..y + height) {
@@ -70,6 +90,7 @@ object SettingWidget {
             is Setting.Float -> clickFloat(mouseX, mouseY, setting, x, y, width)
             is Setting.Int -> clickInt(mouseX, mouseY, setting, x, y, width)
             is Setting.Mode -> clickMode(mouseX, mouseY, setting, x, y, width, button)
+            is Setting.Color -> clickColor(mouseX, mouseY, setting, x, y, width)
             is Setting.StringSetting -> false
             else -> false
         }
@@ -98,6 +119,18 @@ object SettingWidget {
             is Setting.Int -> {
                 val range = s.max - s.min
                 s.value = (s.min + (ratio * range).roundToInt()).coerceIn(s.min, s.max)
+            }
+            is Setting.Color -> {
+                val hsb = FloatArray(3)
+                val r = (s.value shr 16) and 0xFF
+                val g = (s.value shr 8) and 0xFF
+                val b = s.value and 0xFF
+                java.awt.Color.RGBtoHSB(r, g, b, hsb)
+                if (drag.type == "color_hue") {
+                    s.value = java.awt.Color.HSBtoRGB(ratio, hsb[1], hsb[2])
+                } else if (drag.type == "color_bri") {
+                    s.value = java.awt.Color.HSBtoRGB(hsb[0], hsb[1], ratio)
+                }
             }
             else -> {}
         }
@@ -163,6 +196,7 @@ object SettingWidget {
         inputText = ""
         dragging = null
         hoveredSetting = null
+        expandedColorSetting = null
     }
 
     private fun checkFocusLoss(mx: Int, my: Int, x: Int, y: Int, w: Int, h: Int) {
@@ -275,10 +309,70 @@ object SettingWidget {
     }
 
     private fun renderColor(ctx: GuiGraphics, s: Setting.Color, x: Int, y: Int, width: Int) {
-        ctx.fill(x, y, x + width, y + 26, 0x10000000.toInt())
+        val isExpanded = expandedColorSetting == s
+        val h = if (isExpanded) 94 else 26
+        
+        ctx.fill(x, y, x + width, y + h, 0x10000000.toInt())
         GUIFontRenderer.draw(ctx, s.name, (x + 4).toFloat(), (y + 7).toFloat(), VoltHackTheme.textPrimary)
+        
+        // Header color box
         ctx.fill(x + width - 22, y + 4, x + width - 6, y + 20, s.value)
         ctx.fill(x + width - 22, y + 4, x + width - 6, y + 20, 0x40000000.toInt())
+        
+        if (isExpanded) {
+            // 1. Draw curated presets grid
+            val presetY = y + 32
+            for (i in PRESET_COLORS.indices) {
+                val pX = x + 6 + i * 20
+                ctx.fill(pX, presetY, pX + 14, presetY + 14, PRESET_COLORS[i])
+                // Highlight if selected
+                if (s.value == PRESET_COLORS[i]) {
+                    val border = 0xFFFFFFFF.toInt()
+                    ctx.fill(pX - 1, presetY - 1, pX + 15, presetY, border)
+                    ctx.fill(pX - 1, presetY + 14, pX + 15, presetY + 15, border)
+                    ctx.fill(pX - 1, presetY, pX, presetY + 14, border)
+                    ctx.fill(pX + 14, presetY, pX + 15, presetY + 14, border)
+                }
+            }
+            
+            // Convert current color to HSB for sliders
+            val hsb = FloatArray(3)
+            val r = (s.value shr 16) and 0xFF
+            val g = (s.value shr 8) and 0xFF
+            val b = s.value and 0xFF
+            java.awt.Color.RGBtoHSB(r, g, b, hsb)
+            val currentHue = hsb[0]
+            val currentBri = hsb[2]
+            
+            val barX = x + 6
+            val barW = width - 12
+            
+            // 2. Draw Hue Slider (Rainbow)
+            val barY = y + 54
+            val barH = 8
+            val slices = 32
+            val sliceW = barW.toFloat() / slices
+            for (i in 0 until slices) {
+                val hueVal = i.toFloat() / slices
+                val rgb = java.awt.Color.HSBtoRGB(hueVal, 1.0f, 1.0f)
+                ctx.fill((barX + i * sliceW).toInt(), barY, (barX + (i + 1) * sliceW).toInt(), barY + barH, rgb)
+            }
+            // Hue Handle
+            val thumbX = barX + (currentHue * barW).toInt()
+            ctx.fill(thumbX - 2, barY - 2, thumbX + 2, barY + barH + 2, 0xFFFFFFFF.toInt())
+            
+            // 3. Draw Brightness Slider (Color to Black/White gradient)
+            val briY = y + 72
+            val briH = 8
+            for (i in 0 until slices) {
+                val briVal = i.toFloat() / slices
+                val rgb = java.awt.Color.HSBtoRGB(currentHue, hsb[1], briVal)
+                ctx.fill((barX + i * sliceW).toInt(), briY, (barX + (i + 1) * sliceW).toInt(), briY + briH, rgb)
+            }
+            // Brightness Handle
+            val briThumbX = barX + (currentBri * barW).toInt()
+            ctx.fill(briThumbX - 2, briY - 2, briThumbX + 2, briY + briH + 2, 0xFFFFFFFF.toInt())
+        }
     }
 
     private fun renderString(ctx: GuiGraphics, s: Setting.StringSetting, x: Int, y: Int, width: Int) {
@@ -331,6 +425,56 @@ object SettingWidget {
                 s.value = s.modes[(idx + 1) % s.modes.size]
             }
             return true
+        }
+        return false
+    }
+
+    private fun clickColor(mx: Int, my: Int, s: Setting.Color, x: Int, y: Int, width: Int): Boolean {
+        if (my in y..y + 26) {
+            expandedColorSetting = if (expandedColorSetting == s) null else s
+            return true
+        }
+
+        if (expandedColorSetting == s) {
+            val barX = x + 6
+            val barW = width - 12
+            
+            val presetY = y + 32
+            if (my in presetY..presetY + 14) {
+                for (i in PRESET_COLORS.indices) {
+                    val pX = x + 6 + i * 20
+                    if (mx in pX..pX + 14) {
+                        s.value = PRESET_COLORS[i]
+                        return true
+                    }
+                }
+            }
+
+            val barY = y + 54
+            if (my in barY - 2..barY + 10) {
+                val ratio = ((mx - barX).toFloat() / barW).coerceIn(0f, 1f)
+                val hsb = FloatArray(3)
+                val r = (s.value shr 16) and 0xFF
+                val g = (s.value shr 8) and 0xFF
+                val b = s.value and 0xFF
+                java.awt.Color.RGBtoHSB(r, g, b, hsb)
+                s.value = java.awt.Color.HSBtoRGB(ratio, hsb[1], hsb[2])
+                dragging = Dragging(s, mx, ratio, barX, barW, "color_hue")
+                return true
+            }
+
+            val briY = y + 72
+            if (my in briY - 2..briY + 10) {
+                val ratio = ((mx - barX).toFloat() / barW).coerceIn(0f, 1f)
+                val hsb = FloatArray(3)
+                val r = (s.value shr 16) and 0xFF
+                val g = (s.value shr 8) and 0xFF
+                val b = s.value and 0xFF
+                java.awt.Color.RGBtoHSB(r, g, b, hsb)
+                s.value = java.awt.Color.HSBtoRGB(hsb[0], hsb[1], ratio)
+                dragging = Dragging(s, mx, ratio, barX, barW, "color_bri")
+                return true
+            }
         }
         return false
     }
