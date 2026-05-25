@@ -1,0 +1,139 @@
+name: Discord Notifier
+
+on:
+  push:
+  issues:
+    types: [opened, closed, reopened, edited]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Log Notification
+        if: github.event_name == 'push'
+        env:
+          WEBHOOK_URL: ${{ secrets.GIT_LOG }}
+          COMPARE_URL: ${{ github.event.compare }}
+          BRANCH: ${{ github.ref_name }}
+          PUSHER: ${{ github.actor }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "GIT_LOG secret is not set. Skipping notification."
+            exit 0
+          fi
+          
+          # Parse and format commits list
+          COMMITS_JSON='${{ toJson(github.event.commits) }}'
+          if [ "$COMMITS_JSON" = "null" ] || [ -z "$COMMITS_JSON" ]; then
+            COMMIT_LIST="No new commits."
+          else
+            COMMIT_LIST=$(echo "$COMMITS_JSON" | jq -r '.[] | "- [`" + .id[0:7] + "`](" + .url + ") " + (.message | split("\n")[0]) + " - **" + .author.name + "**"' 2>/dev/null || echo "No new commits.")
+          fi
+          
+          REPO="${{ github.repository }}"
+          PUSHER_URL="https://github.com/$PUSHER"
+          PUSHER_ICON="https://github.com/${PUSHER}.png"
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          PAYLOAD=$(jq -n \
+            --arg title "New commits pushed to $BRANCH" \
+            --arg url "$COMPARE_URL" \
+            --arg desc "$COMMIT_LIST" \
+            --arg repo "$REPO" \
+            --arg pusher "$PUSHER" \
+            --arg pusher_url "$PUSHER_URL" \
+            --arg pusher_icon "$PUSHER_ICON" \
+            --arg timestamp "$TIMESTAMP" \
+            '{
+              embeds: [{
+                title: $title,
+                url: $url,
+                description: $desc,
+                color: 3796756,
+                fields: [
+                  { name: "Repository", value: $repo, inline: true },
+                  { name: "Pusher", value: ("[" + $pusher + "](" + $pusher_url + ")"), inline: true }
+                ],
+                author: {
+                  name: $pusher,
+                  url: $pusher_url,
+                  icon_url: $pusher_icon
+                },
+                footer: {
+                  text: "VoltHack Git Logs"
+                },
+                timestamp: $timestamp
+              }]
+            }')
+            
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL"
+
+      - name: Git Issues Notification
+        if: github.event_name == 'issues'
+        env:
+          WEBHOOK_URL: ${{ secrets.GIT_ISSUES }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_ACTION: ${{ github.event.action }}
+          ISSUE_CREATOR: ${{ github.event.issue.user.login }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "GIT_ISSUES secret is not set. Skipping notification."
+            exit 0
+          fi
+          
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          REPO="${{ github.repository }}"
+          
+          if [ "$ISSUE_ACTION" = "opened" ]; then
+            COLOR=3796756 # Volt Neon Green
+          elif [ "$ISSUE_ACTION" = "closed" ]; then
+            COLOR=16724787 # Volt Neon Red
+          elif [ "$ISSUE_ACTION" = "reopened" ]; then
+            COLOR=65535 # Volt Neon Cyan
+          else
+            COLOR=16776960 # Volt Yellow
+          fi
+          
+          TRUNCATED_BODY=$(echo "$ISSUE_BODY" | head -c 800)
+          if [ "${#ISSUE_BODY}" -gt 800 ]; then
+            TRUNCATED_BODY="${TRUNCATED_BODY}..."
+          fi
+          
+          PAYLOAD=$(jq -n \
+            --arg title "Issue #$ISSUE_NUMBER: $ISSUE_TITLE" \
+            --arg url "$ISSUE_URL" \
+            --arg desc "$TRUNCATED_BODY" \
+            --arg repo "$REPO" \
+            --arg creator "$ISSUE_CREATOR" \
+            --arg creator_url "https://github.com/$ISSUE_CREATOR" \
+            --arg creator_icon "https://github.com/$ISSUE_CREATOR.png" \
+            --arg action "$ISSUE_ACTION" \
+            --arg timestamp "$TIMESTAMP" \
+            --argint color "$COLOR" \
+            '{
+              embeds: [{
+                title: $title,
+                url: $url,
+                description: $desc,
+                color: $color,
+                fields: [
+                  { name: "Repository", value: $repo, inline: true },
+                  { name: "Creator", value: ("[" + $creator + "](" + $creator_url + ")"), inline: true },
+                  { name: "Action", value: ($action | ascii_upcase), inline: true }
+                ],
+                author: {
+                  name: $creator,
+                  url: $creator_url,
+                  icon_url: $creator_icon
+                },
+                footer: {
+                  text: "VoltHack Git Issues"
+                },
+                timestamp: $timestamp
+              }]
+            }')
+            
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL"
