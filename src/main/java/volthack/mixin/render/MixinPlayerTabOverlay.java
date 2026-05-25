@@ -17,4 +17,18 @@ public class MixinPlayerTabOverlay {
             cir.setReturnValue(TabUtils.INSTANCE.getTabName(playerInfo, playerInfo.getTabListDisplayName()));
         }
     }
+
+    @org.spongepowered.asm.mixin.injection.Redirect(
+        method = "render",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/ClientPacketListener;getListedOnlinePlayers()Ljava/util/Collection;")
+    )
+    private java.util.Collection<PlayerInfo> redirectGetListedOnlinePlayers(net.minecraft.client.multiplayer.ClientPacketListener connection) {
+        java.util.Collection<PlayerInfo> players = connection.getListedOnlinePlayers();
+        if (TabUtils.INSTANCE.getEnabled()) {
+            return players.stream()
+                .limit(TabUtils.INSTANCE.getMaxPlayers())
+                .collect(java.util.stream.Collectors.toList());
+        }
+        return players;
+    }
 }

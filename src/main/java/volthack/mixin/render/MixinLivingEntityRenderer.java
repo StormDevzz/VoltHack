@@ -12,17 +12,24 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LivingEntityRenderer.class)
 public class MixinLivingEntityRenderer {
+    private static final java.util.WeakHashMap<LivingEntityRenderState, Boolean> playerStates = new java.util.WeakHashMap<>();
+
     @Inject(method = "scale(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;)V", at = @At("HEAD"))
     private void onScale(LivingEntityRenderState state, PoseStack poseStack, CallbackInfo ci) {
     }
 
     @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;F)V", at = @At("TAIL"))
     private void onExtractRenderState(net.minecraft.world.entity.LivingEntity entity, LivingEntityRenderState state, float f, CallbackInfo ci) {
+        if (entity instanceof net.minecraft.world.entity.player.Player) {
+            playerStates.put(state, true);
+        } else {
+            playerStates.remove(state);
+        }
     }
 
     @Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V", at = @At("HEAD"))
     private void onSubmitHead(LivingEntityRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState cameraRenderState, CallbackInfo ci) {
-        if (state.getClass().getSimpleName().contains("Player")) {
+        if (playerStates.containsKey(state)) {
             volthack.modules.render.Chams.INSTANCE.setRenderingPlayer(true);
         }
     }

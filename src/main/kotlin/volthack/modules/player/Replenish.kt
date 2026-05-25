@@ -25,6 +25,7 @@ object Replenish : Module("Replenish", "Automatically refills item stacks in you
         if (!enabled) return
 
         val mc = Minecraft.getInstance()
+        if (mc.screen != null) return
         val player = mc.player ?: return
 
         if (tickDelay > 0) {

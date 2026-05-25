@@ -1,12 +1,11 @@
 package volthack.modules.world
 
 import net.minecraft.client.Minecraft
-import net.minecraft.world.entity.animal.Animal
 import volthack.event.EventBus
 import volthack.event.TickEvent
 import volthack.setting.Category
 import volthack.setting.Module
-import volthack.util.world.breed.BreedUtils
+import volthack.util.world.breed.*
 
 object AutoBreed : Module("AutoBreed", "Automatically feeds and breeds nearby animals using correct foods from your hotbar", Category.WORLD) {
     private val reachRange by float("Range", 4.5f, 2.0f, 6.0f, 0.1f)
@@ -26,24 +25,18 @@ object AutoBreed : Module("AutoBreed", "Automatically feeds and breeds nearby an
             return
         }
 
-        val mc = Minecraft.getInstance()
-        val player = mc.player ?: return
-        val world = mc.level ?: return
+        // Synchronize settings to BreedConfig
+        BreedConfig.range = reachRange.toDouble()
 
-        // 1. Scan for animals in range that can breed
-        val animals = world.entitiesForRendering()
-            .filterIsInstance<Animal>()
-            .filter { player.distanceToSqr(it) <= (reachRange * reachRange).toDouble() }
-            .filter { BreedUtils.canBreed(it) }
+        // Get targets matching our breed selectors
+        val targets = BreedTargetSelector.findBreedTargets()
 
-        for (animal in animals) {
-            // 2. Find matching food in hotbar
-            val foodSlot = BreedUtils.findFoodSlot(animal)
+        for (animal in targets) {
+            val foodSlot = FoodFinder.findFoodSlot(animal)
             if (foodSlot != -1) {
-                // 3. Feed animal
-                BreedUtils.feedAnimal(animal, foodSlot)
+                BreedingAction.feed(animal, foodSlot)
                 tickCooldown = feedDelay
-                break // Feed one animal per tick/delay interval
+                break
             }
         }
     }

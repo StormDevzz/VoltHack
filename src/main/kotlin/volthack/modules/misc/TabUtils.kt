@@ -5,14 +5,14 @@ import net.minecraft.network.chat.Component
 import volthack.setting.Category
 import volthack.setting.Module
 
-object TabUtils : Module("TabUtils", "Allows changing tab list appearance, shows ping/health, and protects VIP status styling", Category.MISC) {
+object TabUtils : Module("TabUtils", "Allows changing tab list appearance, size, shows ping/health, and protects VIP status styling", Category.MISC) {
     val showPing by boolean("Show Ping", true)
     val showHealth by boolean("Show Health", true)
+    val maxPlayers by int("Max Players", 80, 10, 500, "Maximum number of players rendered in the tab list")
 
     fun getTabName(playerInfo: PlayerInfo, original: Component?): Component {
         if (!enabled) return original ?: Component.literal(playerInfo.profile.name)
 
-        // "главное если будет донат у игрока, не будет менять его"
         // If the server has set a custom display name (VIP, Premium, Admin prefixes/colors), we preserve it exactly!
         if (original != null) {
             return original

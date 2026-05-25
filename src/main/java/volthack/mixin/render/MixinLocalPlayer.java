@@ -12,7 +12,16 @@ public class MixinLocalPlayer {
     @Inject(method = "isUsingItem", at = @At("HEAD"), cancellable = true)
     private void onIsUsingItem(CallbackInfoReturnable<Boolean> cir) {
         if (MultiTask.INSTANCE.getEnabled()) {
-            cir.setReturnValue(false);
+            for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+                String methodName = element.getMethodName();
+                if (methodName.contains("startAttack") || 
+                    methodName.contains("continueAttack") || 
+                    methodName.contains("handleKeybinds") ||
+                    methodName.contains("handleMouseClick")) {
+                    cir.setReturnValue(false);
+                    return;
+                }
+            }
         }
     }
 

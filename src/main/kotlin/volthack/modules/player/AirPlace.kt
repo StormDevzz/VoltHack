@@ -52,7 +52,11 @@ object AirPlace : Module("AirPlace", "Allows placing blocks in the empty air and
         val targetX = eyePos.x + lookVec.x * range
         val targetY = eyePos.y + lookVec.y * range
         val targetZ = eyePos.z + lookVec.z * range
-        val pos = BlockPos(targetX.toInt(), targetY.toInt(), targetZ.toInt())
+        val pos = BlockPos(
+            Math.floor(targetX).toInt(),
+            Math.floor(targetY).toInt(),
+            Math.floor(targetZ).toInt()
+        )
 
         // Check if the slot can be placed (must be air/replaceable)
         val state = world.getBlockState(pos)
