@@ -97,8 +97,7 @@ object ModRegistry {
         PingSpoof,
         HandShake,
         PacketLogger,
-        Language,
-        TabUtils
+        Language
     )
 
     fun register() {

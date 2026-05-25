@@ -9,21 +9,6 @@ import volthack.modules.player.MultiTask;
 
 @Mixin(LocalPlayer.class)
 public class MixinLocalPlayer {
-    @Inject(method = "isUsingItem", at = @At("HEAD"), cancellable = true)
-    private void onIsUsingItem(CallbackInfoReturnable<Boolean> cir) {
-        if (MultiTask.INSTANCE.getEnabled()) {
-            for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
-                String methodName = element.getMethodName();
-                if (methodName.contains("startAttack") || 
-                    methodName.contains("continueAttack") || 
-                    methodName.contains("handleKeybinds") ||
-                    methodName.contains("handleMouseClick")) {
-                    cir.setReturnValue(false);
-                    return;
-                }
-            }
-        }
-    }
 
     @Inject(method = "getBlockInteractionRange", at = @At("HEAD"), cancellable = true)
     private void onGetBlockInteractionRange(CallbackInfoReturnable<Double> cir) {

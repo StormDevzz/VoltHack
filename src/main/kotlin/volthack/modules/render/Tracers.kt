@@ -63,10 +63,21 @@ object Tracers : Module("Tracers", "Draws lines pointing to nearby entities", Ca
         val b = col and 0xFF
         val argbColor = (a shl 24) or (r shl 16) or (g shl 8) or b
 
-        // Start point is exactly 0.1 blocks ahead of the camera in camera-space (the crosshair)
-        val startX = 0.0f
-        val startY = 0.0f
-        val startZ = -0.1f
+        // Compute starting point in world-space slightly in front of eye camera position
+        val yaw = player.yRot
+        val pitch = player.xRot
+        val lx = -Math.sin(yaw * Math.PI / 180.0) * Math.cos(pitch * Math.PI / 180.0)
+        val ly = -Math.sin(pitch * Math.PI / 180.0)
+        val lz = Math.cos(yaw * Math.PI / 180.0) * Math.cos(pitch * Math.PI / 180.0)
+        
+        val camPos = mc.gameRenderer.mainCamera.position()
+        val startWorld = Vec3(
+            camPos.x + lx * 0.1,
+            camPos.y + ly * 0.1,
+            camPos.z + lz * 0.1
+        )
+
+        val startCam = transform(startWorld, event.modelViewMatrix)
 
         for (entity in entities) {
             val endWorld = Vec3(
@@ -77,7 +88,7 @@ object Tracers : Module("Tracers", "Draws lines pointing to nearby entities", Ca
 
             val endCam = transform(endWorld, event.modelViewMatrix)
 
-            consumer.addVertex(pose, startX, startY, startZ)
+            consumer.addVertex(pose, startCam.x, startCam.y, startCam.z)
                 .setColor(argbColor)
                 .setNormal(pose, 0.0f, 1.0f, 0.0f)
                 .setLineWidth(1.5f)

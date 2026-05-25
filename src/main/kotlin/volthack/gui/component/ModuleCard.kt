@@ -60,16 +60,33 @@ class ModuleCard(val module: Module) {
         val targetSettings = if (expanded) 1f else 0f
         settingsAnim += (targetSettings - settingsAnim) * 0.18f
 
-        val bgColor = blendColors(VoltHackTheme.disabledBg, VoltHackTheme.enabledBg, toggleAnim)
-        val borderColor = blendColors(VoltHackTheme.border, VoltHackTheme.accent, toggleAnim)
+        // Category distinct theme colors
+        val catColor = VoltHackTheme.categoryColors[module.category] ?: VoltHackTheme.accent
+        val glowColor = (0x33000000.toLong() or (catColor.toLong() and 0x00FFFFFF)).toInt()
+        val activeBgColor = (0x24000000.toLong() or (catColor.toLong() and 0x00FFFFFF)).toInt()
 
+        val bgColor = blendColors(VoltHackTheme.disabledBg, activeBgColor, toggleAnim)
+        val borderColor = blendColors(VoltHackTheme.border, catColor, toggleAnim)
+
+        // Draw elegant hover glow box
         if (hovered) {
-            ctx.fill(x - 1, y - 1, x + width + 1, y + VoltHackTheme.CARD_HEIGHT + 1, VoltHackTheme.accentGlow)
+            ctx.fill(x - 1, y - 1, x + width + 1, y + VoltHackTheme.CARD_HEIGHT + 1, glowColor)
         }
 
+        // Draw card base container
         ctx.fill(x, y, x + width, y + VoltHackTheme.CARD_HEIGHT, bgColor)
         ctx.fill(x, y, x + width, y + 1, borderColor)
 
+        // Draw premium left vertical color accent stripe
+        ctx.fill(x, y, x + 3, y + VoltHackTheme.CARD_HEIGHT, catColor)
+
+        // Draw glowing active status indicator dot on the right
+        val dotX = x + width - 10
+        val dotY = y + VoltHackTheme.CARD_HEIGHT / 2
+        val dotColor = if (module.enabled) catColor else VoltHackTheme.textDisabled
+        ctx.fill(dotX - 2, dotY - 2, dotX + 2, dotY + 2, dotColor)
+
+        // Title text rendering
         val nameColor = blendColors(VoltHackTheme.textSecondary, VoltHackTheme.textPrimary, toggleAnim)
         GUIFontRenderer.drawCentered(
             ctx, module.name,
