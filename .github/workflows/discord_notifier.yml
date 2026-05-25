@@ -88,14 +88,36 @@ jobs:
             exit 0
           fi
           
-          # Parse and format commits list
+          REPO="${{ github.repository }}"
+          
+          # Discord rejects webhooks with empty/invalid URLs. Sanitize everything:
+          if [ -z "$COMPARE_URL" ] || [ "$COMPARE_URL" = "null" ] || [ "$COMPARE_URL" = "" ]; then
+            COMPARE_URL="https://github.com/$REPO"
+          fi
+          if [ -z "$PUSHER" ] || [ "$PUSHER" = "null" ] || [ "$PUSHER" = "" ]; then
+            PUSHER="github-actor"
+          fi
+          PUSHER_URL="https://github.com/$PUSHER"
+          PUSHER_ICON="https://github.com/${PUSHER}.png"
+          
+          if [ -z "$BRANCH" ] || [ "$BRANCH" = "null" ] || [ "$BRANCH" = "" ]; then
+            BRANCH="main"
+          fi
+          
+          # Parse and format commits list safely
           COMMITS_JSON='${{ toJson(github.event.commits) }}'
           if [ "$COMMITS_JSON" = "null" ] || [ -z "$COMMITS_JSON" ] || [ "$COMMITS_JSON" = "[]" ]; then
-            # Fallback to head_commit (ensures info is ALWAYS written, even for identical commits or branch updates)
             if [ -n "$HEAD_COMMIT_ID" ]; then
               SHORT_ID="${HEAD_COMMIT_ID:0:7}"
-              FIRST_LINE=$(echo "$HEAD_COMMIT_MSG" | head -n 1)
-              COMMIT_LIST="- [\`$SHORT_ID\`]($HEAD_COMMIT_URL) $FIRST_LINE - **$HEAD_COMMIT_AUTHOR**"
+              # Sanitize commit message to prevent breaks
+              SAFE_MSG=$(echo "$HEAD_COMMIT_MSG" | head -n 1)
+              
+              # Sanitize URL fallbacks
+              if [ -z "$HEAD_COMMIT_URL" ] || [ "$HEAD_COMMIT_URL" = "null" ] || [ "$HEAD_COMMIT_URL" = "" ]; then
+                HEAD_COMMIT_URL="https://github.com/$REPO/commit/$HEAD_COMMIT_ID"
+              fi
+              
+              COMMIT_LIST="- [\`$SHORT_ID\`]($HEAD_COMMIT_URL) $SAFE_MSG - **$HEAD_COMMIT_AUTHOR**"
               COMMIT_COUNT=1
             else
               COMMIT_LIST="No commit details available (branch/tag synchronization)."
@@ -106,9 +128,6 @@ jobs:
             COMMIT_COUNT=$(echo "$COMMITS_JSON" | jq 'length')
           fi
           
-          REPO="${{ github.repository }}"
-          PUSHER_URL="https://github.com/$PUSHER"
-          PUSHER_ICON="https://github.com/${PUSHER}.png"
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
           
@@ -165,7 +184,19 @@ jobs:
               }]
             }')
             
-          curl -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL"
+          echo "Sending payload to Discord..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL")
+          HTTP_STATUS=$(echo "$RESPONSE" | tr -d '\r' | tail -n 1 | cut -d':' -f2)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "Discord API Response Body:"
+          echo "$BODY"
+          echo "HTTP Status Code: $HTTP_STATUS"
+          
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "Error: Discord Webhook rejected the request with status code $HTTP_STATUS"
+            exit 1
+          fi
 
       # Step 6: Send Issues notifications to Discord
       - name: Git Issues Notification
@@ -184,8 +215,19 @@ jobs:
             exit 0
           fi
           
-          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           REPO="${{ github.repository }}"
+          
+          # Sanitize URL arguments
+          if [ -z "$ISSUE_URL" ] || [ "$ISSUE_URL" = "null" ] || [ "$ISSUE_URL" = "" ]; then
+            ISSUE_URL="https://github.com/$REPO/issues"
+          fi
+          if [ -z "$ISSUE_CREATOR" ] || [ "$ISSUE_CREATOR" = "null" ] || [ "$ISSUE_CREATOR" = "" ]; then
+            ISSUE_CREATOR="github-actor"
+          fi
+          CREATOR_URL="https://github.com/$ISSUE_CREATOR"
+          CREATOR_ICON="https://github.com/${ISSUE_CREATOR}.png"
+          
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           
           if [ "$ISSUE_ACTION" = "opened" ]; then
             COLOR=3796756 # Volt Neon Green
@@ -208,8 +250,8 @@ jobs:
             --arg desc "$TRUNCATED_BODY" \
             --arg repo "$REPO" \
             --arg creator "$ISSUE_CREATOR" \
-            --arg creator_url "https://github.com/$ISSUE_CREATOR" \
-            --arg creator_icon "https://github.com/$ISSUE_CREATOR.png" \
+            --arg creator_url "$CREATOR_URL" \
+            --arg creator_icon "$CREATOR_ICON" \
             --arg action "$ISSUE_ACTION" \
             --arg timestamp "$TIMESTAMP" \
             --argint color "$COLOR" \
@@ -236,4 +278,16 @@ jobs:
               }]
             }')
             
-          curl -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL"
+          echo "Sending payload to Discord..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL")
+          HTTP_STATUS=$(echo "$RESPONSE" | tr -d '\r' | tail -n 1 | cut -d':' -f2)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "Discord API Response Body:"
+          echo "$BODY"
+          echo "HTTP Status Code: $HTTP_STATUS"
+          
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "Error: Discord Webhook rejected the request with status code $HTTP_STATUS"
+            exit 1
+          fi
