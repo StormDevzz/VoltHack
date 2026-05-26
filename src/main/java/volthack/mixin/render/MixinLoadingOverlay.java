@@ -35,28 +35,34 @@ public class MixinLoadingOverlay {
         int verX = cx - verW / 2;
         int titleY = cy - 50;
 
-        drawSafeText(mc, context, title, titleX, titleY, 0xFF6C63FF, true);
+        // Animate colors using a smooth neon HSB cycle
+        long time = System.currentTimeMillis();
+        int cornerColor = (0xFF << 24) | (java.awt.Color.HSBtoRGB((time % 5000) / 5000f, 0.75f, 1.0f) & 0xFFFFFF);
+        int barStartColor = (0xFF << 24) | (java.awt.Color.HSBtoRGB((time % 4000) / 4000f, 0.8f, 1.0f) & 0xFFFFFF);
+        int barEndColor = (0xFF << 24) | (java.awt.Color.HSBtoRGB(((time + 1000) % 4000) / 4000f, 0.8f, 1.0f) & 0xFFFFFF);
+
+        drawSafeText(mc, context, title, titleX, titleY, cornerColor, true);
         drawSafeText(mc, context, ver, verX, titleY + 14, 0xFF9090B0, false);
 
         int barW = 200;
-        int barH = 3;
+        int barH = 4;
         int barX = cx - barW / 2;
         int barY = cy + 30;
 
-        context.fill(cx - 60, cy - 22, cx + 60, cy - 18, 0xFF6C63FF);
-        context.fill(cx - 40, cy - 14, cx + 40, cy - 12, 0xFF4038CC);
+        // Custom clean central graphics
+        context.fill(cx - 50, cy - 20, cx + 50, cy - 19, cornerColor);
+        context.fill(cx - 30, cy - 14, cx + 30, cy - 13, 0x44FFFFFF);
 
-        context.fill(barX, barY, barX + barW, barY + barH, 0xFF1E1E3A);
+        context.fill(barX, barY, barX + barW, barY + barH, 0xFF14142B);
         if (currentProgress > 0.0f) {
             int filled = (int) (barW * currentProgress);
             if (filled > 0) {
-                context.fill(barX, barY, barX + filled, barY + barH, 0xFF6C63FF);
+                context.fillGradient(barX, barY, barX + filled, barY + barH, barStartColor, barEndColor);
             }
         }
 
-        int cornerSize = 16;
-        int cornerOffset = 12;
-        int cornerColor = 0xFF6C63FF;
+        int cornerSize = 20;
+        int cornerOffset = 10;
         context.fill(cornerOffset, cornerOffset, cornerOffset + 2, cornerOffset + cornerSize, cornerColor);
         context.fill(cornerOffset, cornerOffset, cornerOffset + cornerSize, cornerOffset + 2, cornerColor);
         context.fill(w - cornerOffset - 2, cornerOffset, w - cornerOffset, cornerOffset + cornerSize, cornerColor);

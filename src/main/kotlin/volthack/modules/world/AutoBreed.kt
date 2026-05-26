@@ -7,9 +7,18 @@ import volthack.setting.Category
 import volthack.setting.Module
 import volthack.util.world.breed.*
 
-object AutoBreed : Module("AutoBreed", "Automatically feeds and breeds nearby animals using correct foods from your hotbar", Category.WORLD) {
-    private val reachRange by float("Range", 4.5f, 2.0f, 6.0f, 0.1f)
-    private val feedDelay by int("Feed Delay Ticks", 4, 1, 20)
+object AutoBreed : Module("AutoBreed", "Automatically feeds and breeds nearby animals", Category.WORLD) {
+    private val reachRange by float("Range", 4.5f, 2.0f, 6.0f, 0.1f, "Interaction range")
+    private val feedDelay by int("Feed Delay Ticks", 4, 1, 20, "Ticks between feeding actions")
+
+    // Per-animal toggles
+    val breedPigs by boolean("Pigs", true, "Breed pigs")
+    val breedCows by boolean("Cows", true, "Breed cows")
+    val breedHorses by boolean("Horses", false, "Breed horses")
+    val breedLlamas by boolean("Llamas", false, "Breed llamas")
+    val breedSheep by boolean("Sheep", true, "Breed sheep")
+    val breedRabbits by boolean("Rabbits", false, "Breed rabbits")
+    val breedChickens by boolean("Chickens", true, "Breed chickens")
 
     private var tickCooldown = 0
 
@@ -25,10 +34,8 @@ object AutoBreed : Module("AutoBreed", "Automatically feeds and breeds nearby an
             return
         }
 
-        // Synchronize settings to BreedConfig
         BreedConfig.range = reachRange.toDouble()
 
-        // Get targets matching our breed selectors
         val targets = BreedTargetSelector.findBreedTargets()
 
         for (animal in targets) {

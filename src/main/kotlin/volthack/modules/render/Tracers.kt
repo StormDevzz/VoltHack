@@ -1,17 +1,16 @@
 package volthack.modules.render
 
+import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
+import net.minecraft.client.renderer.rendertype.RenderTypes
 import net.minecraft.world.entity.LivingEntity
-import net.minecraft.world.entity.player.Player
-import net.minecraft.world.entity.monster.Monster
 import net.minecraft.world.entity.animal.Animal
+import net.minecraft.world.entity.monster.Monster
+import net.minecraft.world.entity.player.Player
 import volthack.event.EventBus
 import volthack.event.Render3DEvent
 import volthack.setting.Category
 import volthack.setting.Module
-import com.mojang.blaze3d.vertex.PoseStack
-import net.minecraft.client.renderer.rendertype.RenderTypes
-import net.minecraft.world.phys.Vec3
 
 object Tracers : Module("Tracers", "Draws lines pointing to nearby entities", Category.RENDER) {
     val players by boolean("Players", true, "Trace lines to other players")
@@ -24,25 +23,13 @@ object Tracers : Module("Tracers", "Draws lines pointing to nearby entities", Ca
         EventBus.listen<Render3DEvent> { onRender3D(it) }
     }
 
-    private fun transform(vec: Vec3, matrix: org.joml.Matrix4f): org.joml.Vector3f {
-        val mc = Minecraft.getInstance()
-        val cam = mc.gameRenderer.mainCamera.position()
-        val dest = org.joml.Vector3f()
-        matrix.transformPosition(
-            (vec.x - cam.x).toFloat(),
-            (vec.y - cam.y).toFloat(),
-            (vec.z - cam.z).toFloat(),
-            dest
-        )
-        return dest
-    }
-
     private fun onRender3D(event: Render3DEvent) {
         if (!enabled) return
 
         val mc = Minecraft.getInstance()
         val player = mc.player ?: return
         val world = mc.level ?: return
+        val camera = mc.gameRenderer.mainCamera
 
         val entities = world.entitiesForRendering()
             .filterIsInstance<LivingEntity>()
@@ -54,7 +41,13 @@ object Tracers : Module("Tracers", "Draws lines pointing to nearby entities", Ca
 
         val bufferSource = mc.renderBuffers().bufferSource()
         val consumer = bufferSource.getBuffer(RenderTypes.lines())
-        val pose = PoseStack().last()
+
+        // Build a PoseStack seeded with the modelViewMatrix coming from the render event.
+        // This matches exactly what Minecraft's 3D renderer is currently using, so all
+        // camera-relative coordinates (including view-bob) are already baked in.
+        val poseStack = PoseStack()
+        poseStack.last().pose().set(event.modelViewMatrix)
+        val pose = poseStack.last()
 
         val col = color
         val a = 255
@@ -63,39 +56,26 @@ object Tracers : Module("Tracers", "Draws lines pointing to nearby entities", Ca
         val b = col and 0xFF
         val argbColor = (a shl 24) or (r shl 16) or (g shl 8) or b
 
-        // Compute starting point in world-space slightly in front of eye camera position
-        val yaw = player.yRot
-        val pitch = player.xRot
-        val lx = -Math.sin(yaw * Math.PI / 180.0) * Math.cos(pitch * Math.PI / 180.0)
-        val ly = -Math.sin(pitch * Math.PI / 180.0)
-        val lz = Math.cos(yaw * Math.PI / 180.0) * Math.cos(pitch * Math.PI / 180.0)
-        
-        val camPos = mc.gameRenderer.mainCamera.position()
-        val startWorld = Vec3(
-            camPos.x + lx * 0.1,
-            camPos.y + ly * 0.1,
-            camPos.z + lz * 0.1
-        )
+        val camX = camera.position().x
+        val camY = camera.position().y
+        val camZ = camera.position().z
 
-        val startCam = transform(startWorld, event.modelViewMatrix)
+        val pt = event.partialTicks
 
         for (entity in entities) {
-            val endWorld = Vec3(
-                entity.xo + (entity.x - entity.xo) * event.partialTicks,
-                entity.yo + (entity.y - entity.yo) * event.partialTicks + (entity.bbHeight / 2.0),
-                entity.zo + (entity.z - entity.zo) * event.partialTicks
-            )
+            val ex = (entity.xo + (entity.x - entity.xo) * pt - camX).toFloat()
+            val ey = (entity.yo + (entity.y - entity.yo) * pt + entity.bbHeight / 2.0 - camY).toFloat()
+            val ez = (entity.zo + (entity.z - entity.zo) * pt - camZ).toFloat()
 
-            val endCam = transform(endWorld, event.modelViewMatrix)
-
-            consumer.addVertex(pose, startCam.x, startCam.y, startCam.z)
+            // Origin (0,0,0) = camera position in world-space → screen center
+            consumer.addVertex(pose, 0f, 0f, 0f)
                 .setColor(argbColor)
-                .setNormal(pose, 0.0f, 1.0f, 0.0f)
+                .setNormal(pose, 0f, 1f, 0f)
                 .setLineWidth(1.5f)
 
-            consumer.addVertex(pose, endCam.x, endCam.y, endCam.z)
+            consumer.addVertex(pose, ex, ey, ez)
                 .setColor(argbColor)
-                .setNormal(pose, 0.0f, 1.0f, 0.0f)
+                .setNormal(pose, 0f, 1f, 0f)
                 .setLineWidth(1.5f)
         }
 

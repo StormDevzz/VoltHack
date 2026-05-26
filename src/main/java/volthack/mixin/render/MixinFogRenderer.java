@@ -17,8 +17,8 @@ public class MixinFogRenderer {
         cancellable = true
     )
     private void onComputeFogColor(Camera camera, float partialTicks, ClientLevel level, int renderDistance, float bossColorModifier, CallbackInfoReturnable<Vector4f> cir) {
-        if (volthack.modules.render.WorldTweaks.INSTANCE.getEnabled()) {
-            int col = volthack.modules.render.WorldTweaks.INSTANCE.getColor();
+        if (volthack.modules.render.CustomFog.INSTANCE.getEnabled()) {
+            int col = volthack.modules.render.CustomFog.INSTANCE.getFogColor();
             float r = ((col >> 16) & 0xFF) / 255.0f;
             float g = ((col >> 8) & 0xFF) / 255.0f;
             float b = (col & 0xFF) / 255.0f;

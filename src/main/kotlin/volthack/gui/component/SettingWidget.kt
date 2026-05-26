@@ -21,6 +21,20 @@ object SettingWidget {
     var expandedColorSetting: Setting.Color? = null
     var expandedModeSetting: Setting.Mode? = null
 
+    private val animProgressMap = mutableMapOf<Setting<*>, Float>()
+
+    private fun getAnimProgress(setting: Setting<*>, expanded: Boolean): Float {
+        val current = animProgressMap[setting] ?: 0f
+        val target = if (expanded) 1f else 0f
+        if (kotlin.math.abs(target - current) < 0.005f) {
+            animProgressMap[setting] = target
+            return target
+        }
+        val next = current + (target - current) * 0.22f
+        animProgressMap[setting] = next
+        return next
+    }
+
     private val PRESET_COLORS = intArrayOf(
         0xFFFF6B6B.toInt(), // Soft Red
         0xFFFF9F43.toInt(), // Sunset Orange
@@ -45,8 +59,14 @@ object SettingWidget {
         if (!setting.isVisible()) return 0
         return when (setting) {
             is Setting.Float, is Setting.Int -> 32
-            is Setting.Color -> if (expandedColorSetting == setting) 94 else 26
-            is Setting.Mode -> if (expandedModeSetting == setting) 26 + setting.modes.size * 18 else 26
+            is Setting.Color -> {
+                val progress = getAnimProgress(setting, expandedColorSetting == setting)
+                (26 + progress * 86).toInt() // 26 + 86 = 112
+            }
+            is Setting.Mode -> {
+                val progress = getAnimProgress(setting, expandedModeSetting == setting)
+                (26 + progress * (setting.modes.size * 18)).toInt()
+            }
             else -> 26
         }
     }
@@ -124,14 +144,20 @@ object SettingWidget {
             }
             is Setting.Color -> {
                 val hsb = FloatArray(3)
+                val a = (s.value shr 24) and 0xFF
                 val r = (s.value shr 16) and 0xFF
                 val g = (s.value shr 8) and 0xFF
                 val b = s.value and 0xFF
                 java.awt.Color.RGBtoHSB(r, g, b, hsb)
                 if (drag.type == "color_hue") {
-                    s.value = java.awt.Color.HSBtoRGB(ratio, hsb[1], hsb[2])
+                    val rgb = java.awt.Color.HSBtoRGB(ratio, hsb[1], hsb[2])
+                    s.value = (a shl 24) or (rgb and 0x00FFFFFF)
                 } else if (drag.type == "color_bri") {
-                    s.value = java.awt.Color.HSBtoRGB(hsb[0], hsb[1], ratio)
+                    val rgb = java.awt.Color.HSBtoRGB(hsb[0], hsb[1], ratio)
+                    s.value = (a shl 24) or (rgb and 0x00FFFFFF)
+                } else if (drag.type == "color_alpha") {
+                    val newAlpha = (ratio * 255).toInt()
+                    s.value = (newAlpha shl 24) or (s.value and 0x00FFFFFF)
                 }
             }
             else -> {}
@@ -212,26 +238,26 @@ object SettingWidget {
     }
 
     private fun renderBoolean(ctx: GuiGraphics, s: Setting.Boolean, x: Int, y: Int, width: Int) {
-        val color = if (s.value) VoltHackTheme.accent else VoltHackTheme.textDisabled
-        ctx.fill(x, y, x + width, y + 26, 0x10000000.toInt())
-        GUIFontRenderer.draw(ctx, s.name, (x + 4).toFloat(), (y + 7).toFloat(), VoltHackTheme.textPrimary)
+        val color = if (s.value) VoltHackTheme.accent else 0xFF2A2A3D.toInt()
+        ctx.fill(x, y, x + width, y + 26, 0x14000000.toInt())
+        GUIFontRenderer.draw(ctx, s.name, (x + 6).toFloat(), (y + 8).toFloat(), VoltHackTheme.textPrimary)
 
-        val toggleX = x + width - 28
-        val toggleY = y + 5
-        val toggleW = 24
-        val toggleH = 14
+        val toggleX = x + width - 26
+        val toggleY = y + 8
+        val toggleW = 20
+        val toggleH = 10
         ctx.fill(toggleX, toggleY, toggleX + toggleW, toggleY + toggleH, color)
-        val knobX = if (s.value) toggleX + toggleW - 10 else toggleX + 2
-        ctx.fill(knobX, toggleY + 2, knobX + 8, toggleY + toggleH - 2, 0xFFFFFFFF.toInt())
+        val knobX = if (s.value) toggleX + toggleW - 8 else toggleX
+        ctx.fill(knobX, toggleY - 1, knobX + 8, toggleY + toggleH + 1, 0xFFFFFFFF.toInt())
     }
 
     private fun renderFloat(ctx: GuiGraphics, s: Setting.Float, x: Int, y: Int, width: Int) {
-        ctx.fill(x, y, x + width, y + 32, 0x10000000.toInt())
-        GUIFontRenderer.draw(ctx, s.name, (x + 4).toFloat(), (y + 3).toFloat(), VoltHackTheme.textSecondary)
+        ctx.fill(x, y, x + width, y + 32, 0x14000000.toInt())
+        GUIFontRenderer.draw(ctx, s.name, (x + 6).toFloat(), (y + 4).toFloat(), VoltHackTheme.textSecondary)
 
         val label = "%.2f".format(s.value)
-        GUIFontRenderer.draw(ctx, label, (x + width - GUIFontRenderer.width(label) - 4).toFloat(),
-            (y + 3).toFloat(), VoltHackTheme.accent)
+        GUIFontRenderer.draw(ctx, label, (x + width - GUIFontRenderer.width(label) - 6).toFloat(),
+            (y + 4).toFloat(), VoltHackTheme.accent)
 
         val slY = y + 20
         val slH = 4
@@ -241,7 +267,6 @@ object SettingWidget {
             val boxColor = VoltHackTheme.surfaceLight
             val borderC = VoltHackTheme.accent
             
-            // Draw animated text box instead of slider
             ctx.fill(x + 2, slY - 4, x + width - 2, slY + slH + 4, boxColor)
             val bt = 1
             ctx.fill(x + 2, slY - 4, x + width - 2, slY - 4 + bt, borderC)
@@ -252,24 +277,24 @@ object SettingWidget {
             val cursor = if ((System.currentTimeMillis() / 500) % 2 == 0L) "|" else ""
             GUIFontRenderer.draw(ctx, inputText + cursor, (x + 6).toFloat(), (slY - 2).toFloat(), VoltHackTheme.textPrimary)
         } else {
-            ctx.fill(x + 2, slY, x + width - 2, slY + slH, VoltHackTheme.surfaceLight)
+            ctx.fill(x + 2, slY, x + width - 2, slY + slH, 0xFF2A2A3D.toInt())
 
             val fill = ((s.value - s.min) / (s.max - s.min) * (width - 4)).coerceIn(0f, (width - 4).toFloat())
             val fillW = fill.roundToInt()
             ctx.fill(x + 2, slY, x + 2 + fillW, slY + slH, VoltHackTheme.accent)
 
-            val thumbX = (x + 2 + fillW).coerceIn(x + 1, x + width - 2) - 3
-            ctx.fill(thumbX, slY - 2, thumbX + 6, slY + slH + 2, 0xFFFFFFFF.toInt())
+            val thumbX = (x + 2 + fillW).coerceIn(x + 1, x + width - 2) - 1
+            ctx.fill(thumbX, slY - 3, thumbX + 3, slY + slH + 3, 0xFFFFFFFF.toInt())
         }
     }
 
     private fun renderInt(ctx: GuiGraphics, s: Setting.Int, x: Int, y: Int, width: Int) {
-        ctx.fill(x, y, x + width, y + 32, 0x10000000.toInt())
-        GUIFontRenderer.draw(ctx, s.name, (x + 4).toFloat(), (y + 3).toFloat(), VoltHackTheme.textSecondary)
+        ctx.fill(x, y, x + width, y + 32, 0x14000000.toInt())
+        GUIFontRenderer.draw(ctx, s.name, (x + 6).toFloat(), (y + 4).toFloat(), VoltHackTheme.textSecondary)
 
         val label = s.value.toString()
-        GUIFontRenderer.draw(ctx, label, (x + width - GUIFontRenderer.width(label) - 4).toFloat(),
-            (y + 3).toFloat(), VoltHackTheme.accent)
+        GUIFontRenderer.draw(ctx, label, (x + width - GUIFontRenderer.width(label) - 6).toFloat(),
+            (y + 4).toFloat(), VoltHackTheme.accent)
 
         val slY = y + 20
         val slH = 4
@@ -279,7 +304,6 @@ object SettingWidget {
             val boxColor = VoltHackTheme.surfaceLight
             val borderC = VoltHackTheme.accent
             
-            // Draw animated text box instead of slider
             ctx.fill(x + 2, slY - 4, x + width - 2, slY + slH + 4, boxColor)
             val bt = 1
             ctx.fill(x + 2, slY - 4, x + width - 2, slY - 4 + bt, borderC)
@@ -290,21 +314,20 @@ object SettingWidget {
             val cursor = if ((System.currentTimeMillis() / 500) % 2 == 0L) "|" else ""
             GUIFontRenderer.draw(ctx, inputText + cursor, (x + 6).toFloat(), (slY - 2).toFloat(), VoltHackTheme.textPrimary)
         } else {
-            ctx.fill(x + 2, slY, x + width - 2, slY + slH, VoltHackTheme.surfaceLight)
+            ctx.fill(x + 2, slY, x + width - 2, slY + slH, 0xFF2A2A3D.toInt())
 
             val range = (s.max - s.min).coerceAtLeast(1)
             val fill = (s.value - s.min).toFloat() / range * (width - 4)
             val fillW = fill.roundToInt()
             ctx.fill(x + 2, slY, x + 2 + fillW, slY + slH, VoltHackTheme.accent)
 
-            val thumbX = (x + 2 + fillW).coerceIn(x + 1, x + width - 2) - 3
-            ctx.fill(thumbX, slY - 2, thumbX + 6, slY + slH + 2, 0xFFFFFFFF.toInt())
+            val thumbX = (x + 2 + fillW).coerceIn(x + 1, x + width - 2) - 1
+            ctx.fill(thumbX, slY - 3, thumbX + 3, slY + slH + 3, 0xFFFFFFFF.toInt())
         }
     }
 
     private fun renderMode(ctx: GuiGraphics, s: Setting.Mode, x: Int, y: Int, width: Int) {
-        val isExpanded = expandedModeSetting == s
-        val h = if (isExpanded) 26 + s.modes.size * 18 else 26
+        val h = getHeight(s)
         
         ctx.fill(x, y, x + width, y + h, 0x10000000.toInt())
         GUIFontRenderer.draw(ctx, s.name, (x + 4).toFloat(), (y + 4).toFloat(), VoltHackTheme.textSecondary)
@@ -313,7 +336,9 @@ object SettingWidget {
             (y + 4).toFloat(), VoltHackTheme.textDisabled)
         GUIFontRenderer.draw(ctx, s.value, (x + 4).toFloat(), (y + 14).toFloat(), VoltHackTheme.accent)
         
-        if (isExpanded) {
+        val progress = getAnimProgress(s, expandedModeSetting == s)
+        if (progress > 0.01f) {
+            ctx.enableScissor(x + 2, y + 26, x + width - 2, y + h)
             for (i in s.modes.indices) {
                 val m = s.modes[i]
                 val mY = y + 26 + i * 18
@@ -324,21 +349,28 @@ object SettingWidget {
                 val textColor = if (isCurrent) VoltHackTheme.accent else VoltHackTheme.textSecondary
                 GUIFontRenderer.draw(ctx, m, (x + 8).toFloat(), (mY + 4).toFloat(), textColor)
             }
+            ctx.disableScissor()
         }
     }
 
     private fun renderColor(ctx: GuiGraphics, s: Setting.Color, x: Int, y: Int, width: Int) {
-        val isExpanded = expandedColorSetting == s
-        val h = if (isExpanded) 94 else 26
+        val h = getHeight(s)
         
         ctx.fill(x, y, x + width, y + h, 0x10000000.toInt())
         GUIFontRenderer.draw(ctx, s.name, (x + 4).toFloat(), (y + 7).toFloat(), VoltHackTheme.textPrimary)
         
-        // Header color box
+        // Header color box (drawn with accurate ARGB)
         ctx.fill(x + width - 22, y + 4, x + width - 6, y + 20, s.value)
         ctx.fill(x + width - 22, y + 4, x + width - 6, y + 20, 0x40000000.toInt())
         
-        if (isExpanded) {
+        val progress = getAnimProgress(s, expandedColorSetting == s)
+        if (progress > 0.01f) {
+            ctx.fill(x + 2, y + 25, x + 3, y + h, VoltHackTheme.border)
+            ctx.fill(x + width - 3, y + 25, x + width - 2, y + h, VoltHackTheme.border)
+            ctx.fill(x + 2, y + h - 1, x + width - 2, y + h, VoltHackTheme.border)
+            
+            ctx.enableScissor(x + 2, y + 26, x + width - 2, y + h)
+
             // 1. Draw curated presets grid
             val presetY = y + 32
             for (i in PRESET_COLORS.indices) {
@@ -356,6 +388,7 @@ object SettingWidget {
             
             // Convert current color to HSB for sliders
             val hsb = FloatArray(3)
+            val a = (s.value shr 24) and 0xFF
             val r = (s.value shr 16) and 0xFF
             val g = (s.value shr 8) and 0xFF
             val b = s.value and 0xFF
@@ -380,7 +413,7 @@ object SettingWidget {
             val thumbX = barX + (currentHue * barW).toInt()
             ctx.fill(thumbX - 2, barY - 2, thumbX + 2, barY + barH + 2, 0xFFFFFFFF.toInt())
             
-            // 3. Draw Brightness Slider (Color to Black/White gradient)
+            // 3. Draw Brightness Slider
             val briY = y + 72
             val briH = 8
             for (i in 0 until slices) {
@@ -391,6 +424,23 @@ object SettingWidget {
             // Brightness Handle
             val briThumbX = barX + (currentBri * barW).toInt()
             ctx.fill(briThumbX - 2, briY - 2, briThumbX + 2, briY + briH + 2, 0xFFFFFFFF.toInt())
+
+            // 4. Draw Alpha Slider (Gradient from fully transparent to solid current color)
+            val alpY = y + 90
+            val alpH = 8
+            val solidColor = (s.value and 0x00FFFFFF)
+            for (i in 0 until slices) {
+                val alpVal = i.toFloat() / slices
+                val alpAlpha = (alpVal * 255).toInt()
+                val colorAtIdx = (alpAlpha shl 24) or solidColor
+                ctx.fill((barX + i * sliceW).toInt(), alpY, (barX + (i + 1) * sliceW).toInt(), alpY + alpH, colorAtIdx)
+            }
+            // Alpha Handle
+            val currentAlpha = a / 255f
+            val alpThumbX = barX + (currentAlpha * barW).toInt()
+            ctx.fill(alpThumbX - 2, alpY - 2, alpThumbX + 2, alpY + alpH + 2, 0xFFFFFFFF.toInt())
+
+            ctx.disableScissor()
         }
     }
 
@@ -466,6 +516,7 @@ object SettingWidget {
         if (expandedColorSetting == s) {
             val barX = x + 6
             val barW = width - 12
+            val a = (s.value shr 24) and 0xFF
             
             val presetY = y + 32
             if (my in presetY..presetY + 14) {
@@ -486,7 +537,8 @@ object SettingWidget {
                 val g = (s.value shr 8) and 0xFF
                 val b = s.value and 0xFF
                 java.awt.Color.RGBtoHSB(r, g, b, hsb)
-                s.value = java.awt.Color.HSBtoRGB(ratio, hsb[1], hsb[2])
+                val rgb = java.awt.Color.HSBtoRGB(ratio, hsb[1], hsb[2])
+                s.value = (a shl 24) or (rgb and 0x00FFFFFF)
                 dragging = Dragging(s, mx, ratio, barX, barW, "color_hue")
                 return true
             }
@@ -499,8 +551,18 @@ object SettingWidget {
                 val g = (s.value shr 8) and 0xFF
                 val b = s.value and 0xFF
                 java.awt.Color.RGBtoHSB(r, g, b, hsb)
-                s.value = java.awt.Color.HSBtoRGB(hsb[0], hsb[1], ratio)
+                val rgb = java.awt.Color.HSBtoRGB(hsb[0], hsb[1], ratio)
+                s.value = (a shl 24) or (rgb and 0x00FFFFFF)
                 dragging = Dragging(s, mx, ratio, barX, barW, "color_bri")
+                return true
+            }
+
+            val alpY = y + 90
+            if (my in alpY - 2..alpY + 10) {
+                val ratio = ((mx - barX).toFloat() / barW).coerceIn(0f, 1f)
+                val newAlpha = (ratio * 255).toInt()
+                s.value = (newAlpha shl 24) or (s.value and 0x00FFFFFF)
+                dragging = Dragging(s, mx, ratio, barX, barW, "color_alpha")
                 return true
             }
         }

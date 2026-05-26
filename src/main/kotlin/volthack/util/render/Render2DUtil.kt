@@ -101,6 +101,19 @@ object Render2DUtil {
         ctx.fill(ix + iw - thickness, iy + thickness, ix + iw, iy + ih - thickness, color)
     }
 
+    fun drawGradientBox(ctx: GuiGraphics, x: Double, y: Double, w: Double, h: Double, startColor: Int, endColor: Int) {
+        ctx.fillGradient(x.toInt(), y.toInt(), (x + w).toInt(), (y + h).toInt(), startColor, endColor)
+    }
+
+    fun drawGlowOutline(ctx: GuiGraphics, x: Double, y: Double, w: Double, h: Double, color: Int, glowSize: Int = 2) {
+        val baseLong = color.toLong() and 0x00FFFFFF
+        for (i in 1..glowSize) {
+            val alpha = (0x44 / i).coerceAtLeast(8)
+            val shadowColor = ((alpha shl 24).toLong() or baseLong).toInt()
+            drawOutline(ctx, x - i, y - i, w + i * 2, h + i * 2, shadowColor, 1)
+        }
+    }
+
     fun drawEntity2D(
         ctx: GuiGraphics,
         entity: Entity,

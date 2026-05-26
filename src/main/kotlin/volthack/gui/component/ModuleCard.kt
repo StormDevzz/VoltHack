@@ -119,12 +119,27 @@ class ModuleCard(val module: Module) {
             val btnH = 18
             val isHovered = mouseX in btnX..(btnX + btnW) && mouseY in btnY..(btnY + btnH)
 
+            if (active) {
+                val et = System.currentTimeMillis() * 0.01
+                val pulse = (kotlin.math.sin(et) * 0.5 + 0.5).toFloat()
+                val pulseAlpha = (40 + 70 * pulse).toInt()
+                val pulseColor = (pulseAlpha shl 24) or (VoltHackTheme.accent and 0x00FFFFFF)
+                ctx.fill(btnX - 2, btnY - 2, btnX + btnW + 2, btnY + btnH + 2, pulseColor)
+            }
+
             val btnBg = when {
                 active -> VoltHackTheme.accent
                 isHovered -> VoltHackTheme.surfaceHover
                 else -> VoltHackTheme.surface
             }
             ctx.fill(btnX, btnY, btnX + btnW, btnY + btnH, btnBg)
+            
+            val borderC = if (active) VoltHackTheme.accent else VoltHackTheme.border
+            ctx.fill(btnX, btnY, btnX + btnW, btnY + 1, borderC)
+            ctx.fill(btnX, btnY + btnH - 1, btnX + btnW, btnY + btnH, borderC)
+            ctx.fill(btnX, btnY, btnX + 1, btnY + btnH, borderC)
+            ctx.fill(btnX + btnW - 1, btnY, btnX + btnW, btnY + btnH, borderC)
+
             GUIFontRenderer.drawCentered(ctx, bindText, (btnX + btnW / 2f), (btnY + (btnH - GUIFontRenderer.height) / 2f), VoltHackTheme.textPrimary)
         }
         sy += bindH

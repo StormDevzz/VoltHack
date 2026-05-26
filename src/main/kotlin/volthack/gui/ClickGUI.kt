@@ -18,17 +18,27 @@ import volthack.setting.ModuleManager
 import volthack.manager.ConfigManager
 
 class ClickGUI : Screen(Component.literal("ClickGUI")) {
-    private var selectedCategory = Category.COMBAT
+    companion object {
+        var selectedCategory = Category.COMBAT
+    }
     private val cards = mutableListOf<ModuleCard>()
     private var scrollOffset = 0
     private var maxScroll = 0
     private var inputConfigName = ""
     private var activeTabX = 0f
     private var activeTabW = 0f
+    private var animProgress = 0f
+    private var closing = false
 
     override fun init() {
         super.init()
+        animProgress = 0f
+        closing = false
         rebuild()
+    }
+
+    override fun onClose() {
+        closing = true
     }
 
     private fun rebuild() {
@@ -68,49 +78,66 @@ class ClickGUI : Screen(Component.literal("ClickGUI")) {
 
     override fun render(ctx: GuiGraphics, mouseX: Int, mouseY: Int, delta: Float) {
         SettingWidget.hoveredSetting = null
-        ctx.fill(0, 0, width, height, VoltHackTheme.overlay)
-        renderTabs(ctx, mouseX, mouseY)
-
-        if (selectedCategory == Category.CONFIGS) {
-            renderConfigsCategory(ctx, mouseX, mouseY)
+        
+        val target = if (closing) 0f else 1f
+        animProgress += (target - animProgress) * 0.18f
+        
+        if (closing && animProgress < 0.05f) {
+            super.onClose()
             return
         }
 
-        var hoveredName = ""
-        for (card in cards) {
-            val visualY = card.y - scrollOffset
-            if (visualY + VoltHackTheme.CARD_HEIGHT < VoltHackTheme.TAB_HEIGHT || visualY > height) continue
+        val animOffset = ((1f - animProgress) * 20f).toInt()
+        val pose = ctx.pose()
+        pose.pushMatrix()
+        pose.translate(0f, animOffset.toFloat())
 
-            val originalY = card.y
-            card.y = visualY
-            card.render(ctx, mouseX, mouseY)
-            card.y = originalY
+        val overlayAlpha = ((0xB0 * animProgress).toInt() and 0xFF) shl 24
+        ctx.fill(0, -animOffset, width, height - animOffset, overlayAlpha or (VoltHackTheme.overlay and 0x00FFFFFF))
+        
+        renderTabs(ctx, mouseX, mouseY - animOffset)
 
-            if (card.hovered) {
-                hoveredName = card.module.name
-            }
-        }
+        if (selectedCategory == Category.CONFIGS) {
+            renderConfigsCategory(ctx, mouseX, mouseY - animOffset)
+        } else {
+            var hoveredName = ""
+            for (card in cards) {
+                val visualY = card.y - scrollOffset
+                if (visualY + VoltHackTheme.CARD_HEIGHT < VoltHackTheme.TAB_HEIGHT || visualY > height) continue
 
-        if (hoveredName.isNotEmpty() && SettingWidget.hoveredSetting == null) {
-            val descKey = "module.$hoveredName.description"
-            val descTranslation = LanguageManager.get(descKey)
-            val desc = if (descTranslation != descKey) {
-                descTranslation
-            } else {
-                val module = cards.find { it.module.name == hoveredName }?.module
-                if (module != null && module.description.isNotEmpty()) {
-                    module.description
-                } else {
-                    "No description available."
+                val originalY = card.y
+                card.y = visualY
+                card.render(ctx, mouseX, mouseY - animOffset)
+                card.y = originalY
+
+                if (card.hovered) {
+                    hoveredName = card.module.name
                 }
             }
-            TooltipRenderer.render(ctx, desc, mouseX, mouseY)
-        }
 
-        val hoveredS = SettingWidget.hoveredSetting
-        if (hoveredS != null && hoveredS.description.isNotEmpty()) {
-            TooltipRenderer.render(ctx, hoveredS.description, mouseX, mouseY)
+            var descToShow = ""
+            if (hoveredName.isNotEmpty() && SettingWidget.hoveredSetting == null) {
+                val descKey = "module.$hoveredName.description"
+                val descTranslation = LanguageManager.get(descKey)
+                descToShow = if (descTranslation != descKey) {
+                    descTranslation
+                } else {
+                    val module = cards.find { it.module.name == hoveredName }?.module
+                    if (module != null && module.description.isNotEmpty()) {
+                        module.description
+                    } else {
+                        "No description available."
+                    }
+                }
+            } else {
+                val hoveredS = SettingWidget.hoveredSetting
+                if (hoveredS != null && hoveredS.description.isNotEmpty()) {
+                    descToShow = hoveredS.description
+                }
+            }
+            TooltipRenderer.render(ctx, descToShow, mouseX, mouseY - animOffset)
         }
+        pose.popMatrix()
     }
 
     private fun renderConfigsCategory(ctx: GuiGraphics, mouseX: Int, mouseY: Int) {

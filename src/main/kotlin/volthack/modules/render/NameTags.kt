@@ -6,6 +6,7 @@ import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.animal.Animal
+import net.minecraft.world.entity.monster.Monster
 import net.minecraft.world.item.ItemStack
 import volthack.event.EventBus
 import volthack.event.Render3DEvent
@@ -13,10 +14,12 @@ import volthack.gui.font.GUIFontRenderer
 import volthack.setting.Category
 import volthack.setting.Module
 import volthack.util.render.Render2DUtil
+import kotlin.math.roundToInt
 
 object NameTags : Module("NameTags", "Shows info tags above entities", Category.RENDER) {
     private val colorMode by mode("Color Mode", listOf("Static", "Distance"), "Static")
     private val customColor by color("Color", 0xFF6C63FF.toInt())
+    private val bgColor by color("BG Color", 0xE00D0D1A.toInt(), "The background color of the tag plate")
     private val showHealth by boolean("Show Health", true)
     private val showDistance by boolean("Show Distance", true)
     private val showArmor by boolean("Show Armor", true)
@@ -66,7 +69,7 @@ object NameTags : Module("NameTags", "Shows info tags above entities", Category.
             .filter { camPos.distanceToSqr(it.position()) <= maxRange * maxRange }
 
         for (entity in entities) {
-            val headY = entity.yo + (entity.y - entity.yo) * partialTicks + entity.bbHeight + 0.5
+            val headY = entity.yo + (entity.y - entity.yo) * partialTicks + entity.bbHeight + 0.35
             val headX = entity.xo + (entity.x - entity.xo) * partialTicks
             val headZ = entity.zo + (entity.z - entity.zo) * partialTicks
 
@@ -75,7 +78,7 @@ object NameTags : Module("NameTags", "Shows info tags above entities", Category.
                 projected.y < -200 || projected.y > mc.window.guiScaledHeight + 200) continue
 
             val color = if (colorMode == "Distance") {
-                val refRange = 64.0
+                val refRange = maxRange.toDouble()
                 val pct = (camPos.distanceTo(entity.position()) / refRange).coerceIn(0.0, 1.0)
                 val cr = (255 * (1f - pct)).toInt().coerceIn(0, 255)
                 val cg = (255 * pct).toInt().coerceIn(0, 255)
@@ -96,6 +99,7 @@ object NameTags : Module("NameTags", "Shows info tags above entities", Category.
         val mc = Minecraft.getInstance()
 
         for (tag in tags) {
+            val entity = tag.entity
             val x = tag.screenX
             val y = tag.screenY
 
@@ -106,77 +110,90 @@ object NameTags : Module("NameTags", "Shows info tags above entities", Category.
             stack.scale(scaleVal, scaleVal)
             stack.translate(-x.toFloat(), -y.toFloat())
 
-            val lineH = GUIFontRenderer.height + 2
-
-            val lines = mutableListOf<Pair<String, Int>>()
-            lines.add(tag.entity.name.string to tag.color)
+            // Build premium horizontal formatted tag
+            val sb = StringBuilder()
+            
+            // The entity name
+            sb.append("§f").append(entity.name.string)
 
             if (showHealth) {
-                val hp = tag.entity.health
-                val maxHp = tag.entity.maxHealth.coerceAtLeast(1f)
-                val hpText = "HP: ${hp.toInt()}/${maxHp.toInt()}"
-                val hpColor = when {
-                    hp / maxHp > 0.6f -> 0xFF2ED573.toInt()
-                    hp / maxHp > 0.3f -> 0xFFFFA502.toInt()
-                    else -> 0xFFFF4757.toInt()
+                val hp = entity.health.roundToInt()
+                val maxHp = entity.maxHealth.coerceAtLeast(1f).roundToInt()
+                val hpPct = entity.health / entity.maxHealth
+                val hpColorCode = when {
+                    hpPct > 0.6f -> "§a"
+                    hpPct > 0.3f -> "§e"
+                    else -> "§c"
                 }
-                lines.add(hpText to hpColor)
+                sb.append(" ").append(hpColorCode).append(hp)
             }
 
             if (showDistance) {
-                val dist = "%.1fm".format(player.distanceTo(tag.entity))
-                lines.add(dist to 0xFFAAAAAA.toInt())
+                val dist = player.distanceTo(entity).roundToInt()
+                sb.append(" §7").append(dist).append("m")
             }
 
-            if (showUUID && tag.entity is Player) {
-                lines.add(tag.entity.uuid.toString().take(8) + "..." to 0xFF909090.toInt())
+            if (showUUID && entity is Player) {
+                sb.append(" §8(").append(entity.uuid.toString().take(6)).append(")")
             }
 
-            if (showGameMode && tag.entity is Player) {
-                val info = mc.player?.connection?.getPlayerInfo(tag.entity.uuid)
+            if (showGameMode && entity is Player) {
+                val info = mc.player?.connection?.getPlayerInfo(entity.uuid)
                 if (info != null) {
-                    lines.add("GM: ${info.gameMode.name}" to 0xFFFFA500.toInt())
+                    val gmText = when (info.gameMode.name.lowercase()) {
+                        "creative" -> "§6C"
+                        "survival" -> "§aS"
+                        "adventure" -> "§eA"
+                        else -> "§7Sp"
+                    }
+                    sb.append(" [").append(gmText).append("§f]")
                 }
             }
 
-            val maxLineWidth = lines.maxOf { GUIFontRenderer.width(it.first) }
+            val text = sb.toString()
+            val textW = GUIFontRenderer.width(text)
+            val lineH = GUIFontRenderer.height
 
             val mcItemSize = 16
-            val heldItem = tag.entity.mainHandItem
-            val offhandItem = tag.entity.offhandItem
-            val hasHeldItem = showHeldItem && !heldItem.isEmpty && tag.entity is Player
-            val hasOffhand = showHeldItem && !offhandItem.isEmpty && tag.entity is Player
+            val heldItem = entity.mainHandItem
+            val offhandItem = entity.offhandItem
+            val hasHeldItem = showHeldItem && !heldItem.isEmpty && entity is Player
+            val hasOffhand = showHeldItem && !offhandItem.isEmpty && entity is Player
             val hasArmor = showArmor && (0 until 4).any {
-                !tag.entity.getItemBySlot(EquipmentSlot.entries[it]).isEmpty
+                !entity.getItemBySlot(EquipmentSlot.entries[it]).isEmpty
             }
 
             val itemSlots = mutableListOf<ItemStack>()
             if (hasOffhand) itemSlots.add(offhandItem)
             if (hasArmor) {
                 val armorSlots = listOf(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)
-                armorSlots.forEach { itemSlots.add(tag.entity.getItemBySlot(it)) }
+                armorSlots.forEach { itemSlots.add(entity.getItemBySlot(it)) }
             }
             if (hasHeldItem) itemSlots.add(heldItem)
 
             val totalItemW = itemSlots.size * mcItemSize
-            val itemH = if (itemSlots.isNotEmpty()) mcItemSize + 2 else 0
+            val itemH = if (itemSlots.isNotEmpty()) mcItemSize + 4 else 0
 
-            val bgW = maxOf(maxLineWidth + 10, totalItemW)
-            val linesH = lines.size * lineH + 4
-            val bgH = linesH + itemH
+            val bgW = maxOf(textW + 12, totalItemW + 12)
+            val bgH = lineH + itemH + 6
 
-            ctx.fill((x - bgW / 2.0).toInt(), (y - bgH / 2.0).toInt(),
-                (x + bgW / 2.0).toInt(), (y + bgH / 2.0).toInt(), 0x90000000.toInt())
+            val bx = (x - bgW / 2.0).toInt()
+            val by = (y - bgH / 2.0).toInt()
+            val bx2 = (x + bgW / 2.0).toInt()
+            val by2 = (y + bgH / 2.0).toInt()
 
-            var currentY = y - bgH / 2.0 + 2
-            for ((text, color) in lines) {
-                Render2DUtil.drawText(ctx, text, x, currentY, color, centerX = true)
-                currentY += lineH
-            }
+            // Draw glowing outline border and translucent dark base
+            ctx.fill(bx - 1, by - 1, bx2 + 1, by2 + 1, tag.color)
+            ctx.fill(bx, by, bx2, by2, bgColor)
 
+            // Render single row text
+            val textY = by + 4f
+            Render2DUtil.drawText(ctx, text, x, textY.toDouble(), 0xFFFFFFFF.toInt(), centerX = true)
+
+            // Render armor and items
             if (itemSlots.isNotEmpty()) {
                 val startX = (x - totalItemW / 2.0).toInt()
-                val itemY = (y + bgH / 2.0 - mcItemSize).toInt()
+                val itemY = (by2 - mcItemSize - 4).toInt()
                 for (i in itemSlots.indices) {
                     val stack = itemSlots[i]
                     if (!stack.isEmpty) {
@@ -192,6 +209,7 @@ object NameTags : Module("NameTags", "Shows info tags above entities", Category.
     private fun isValidTarget(entity: LivingEntity): Boolean {
         if (entity is Player) return targetPlayers
         if (entity is Animal) return targetPassives
-        return targetMonsters
+        if (entity is Monster) return targetMonsters
+        return false
     }
 }

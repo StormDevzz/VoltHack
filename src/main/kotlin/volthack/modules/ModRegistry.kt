@@ -38,6 +38,7 @@ object ModRegistry {
         LevitCtrl,
         Step,
         FastFall,
+        NoWeb,
 
         // Render
         FullBright,
@@ -55,11 +56,13 @@ object ModRegistry {
         NoBob,
         Spawner,
         Trajectories,
-        WorldTweaks,
+        CustomFog,
         NoRender,
         Tracers,
         PopChams,
         BreadCrumbs,
+        FontModule,
+        Glint,
 
         // World
         AutoFarm,
@@ -86,6 +89,7 @@ object ModRegistry {
         AutoEat,
         MultiTask,
         Reach,
+        FastUse,
 
         // Misc
         AutoAuth,
@@ -97,7 +101,8 @@ object ModRegistry {
         PingSpoof,
         HandShake,
         PacketLogger,
-        Language
+        Language,
+        AntiAim
     )
 
     fun register() {
