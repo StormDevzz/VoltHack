@@ -2,16 +2,12 @@
 minecraft = "1.21.11"
 loader = "0.16.10"
 loom = "1.10.5"
-kotlin = "2.1.10"
 discord-ipc = "0.10.2"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
 fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "loader" }
-kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
-kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 discord-ipc = { module = "io.github.CDAGaming:DiscordIPC", version.ref = "discord-ipc" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "loom" }
-kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

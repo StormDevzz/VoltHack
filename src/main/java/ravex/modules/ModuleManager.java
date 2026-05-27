@@ -75,7 +75,7 @@ public class ModuleManager {
             public void render(net.minecraft.client.gui.GuiGraphics graphics, float partialTicks) {
                 if (!Hud.INSTANCE.getEnabled()) return;
                 var font = net.minecraft.client.Minecraft.getInstance().font;
-                graphics.drawString(font, "VoltHack v1.0", getX(), getY(),
+                graphics.drawString(font, "RaveX v1.0", getX(), getY(),
                         ravex.gui.clickgui.ColorUtility.getActiveColor(), true);
             }
         });

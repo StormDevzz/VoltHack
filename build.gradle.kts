@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.fabric.loom)
-    alias(libs.plugins.kotlin)
 }
 
 base {
@@ -19,8 +18,6 @@ dependencies {
     mappings(loom.officialMojangMappings())
     modImplementation(libs.fabric.loader)
 
-    implementation(libs.kotlin.stdlib)
-    implementation(libs.kotlin.reflect)
     implementation(libs.discord.ipc)
     include(libs.discord.ipc)
     implementation("org.luaj:luaj-jse:3.0.1")
@@ -56,10 +53,6 @@ loom {
     }
 }
 
-kotlin {
-    jvmToolchain(21)
-}
-
 val mcVersion: String = property("minecraft_version") as String
 val loaderVersion: String = property("loader_version") as String
 
@@ -76,14 +69,4 @@ tasks.processResources {
         expand(props)
     }
 }
-kotlin {
-    jvmToolchain(21)
-}
-
-
-
-
-
-
-
 

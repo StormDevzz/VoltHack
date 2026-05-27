@@ -1,4 +1,4 @@
-name: VoltHack CI/CD & Discord Notifier
+name: RaveX CI/CD & Discord Notifier
 
 on:
   push:
@@ -28,8 +28,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Step 4: Compile/Build VoltHack and capture metrics
-      - name: Compile VoltHack
+      # Step 4: Compile/Build RaveX and capture metrics
+      - name: Compile RaveX
         id: compile
         run: |
           echo "Starting compilation check..."
@@ -73,7 +73,7 @@ jobs:
           
           # Extract version from properties
           VERSION=$(grep mod_version gradle.properties | cut -d= -f2 | tr -d ' ')
-          TAG="volthack${VERSION//./}"
+          TAG="ravex${VERSION//./}"
           JAR=$(ls build/libs/*.jar 2>/dev/null | grep -v sources | grep -v slim | head -1 || true)
           
           if [ -z "$JAR" ] || [ ! -f "$JAR" ]; then
@@ -98,7 +98,7 @@ jobs:
           
           # Create new release with compile artifact attached
           echo "Creating new release..."
-          if gh release create "$TAG" "$JAR" --title "VoltHack $VERSION" --notes "VoltHack $VERSION" --latest; then
+          if gh release create "$TAG" "$JAR" --title "RaveX $VERSION" --notes "RaveX $VERSION" --latest; then
             echo "release_status=created" >> $GITHUB_OUTPUT
             echo "release_tag=$TAG" >> $GITHUB_OUTPUT
             echo "release_version=$VERSION" >> $GITHUB_OUTPUT
@@ -251,7 +251,7 @@ jobs:
                   icon_url: $pusher_icon
                 },
                 footer: {
-                  text: "VoltHack Logs & Build CI"
+                  text: "RaveX Logs & Build CI"
                 },
                 timestamp: $timestamp
               }]
@@ -347,7 +347,7 @@ jobs:
                   icon_url: $creator_icon
                 },
                 footer: {
-                  text: "VoltHack Git Issues"
+                  text: "RaveX Git Issues"
                 },
                 timestamp: $timestamp
               }]

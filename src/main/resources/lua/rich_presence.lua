@@ -1,5 +1,5 @@
 --[[
-  rich_presence.lua — VoltHack Discord Rich Presence
+  rich_presence.lua — RaveX Discord Rich Presence
   ===================================================
   Оптимизированная версия: кеширование, минимальная нагрузка на тик
 ]]
@@ -43,7 +43,7 @@ end
 -- ── Формирование details строки ───────────────────────────────────────────────
 local function buildDetails()
     if not player.isInGame() then return "Меню" end
-    return "VoltHack — " .. player.getName()
+    return "RaveX — " .. player.getName()
 end
 
 -- ── Обновление presence ───────────────────────────────────────────────────────

@@ -314,7 +314,7 @@ public class LuaManager {
                 + "\"details\":\"" + escJson(details) + "\","
                 + "\"state\":\"" + escJson(state) + "\""
                 + startBlock
-                + ",\"assets\":{\"large_image\":\"icon\",\"large_text\":\"VoltHack\"}"
+                + ",\"assets\":{\"large_image\":\"icon\",\"large_text\":\"RaveX\"}"
                 + "}},"
                 + "\"nonce\":\"" + nonce + "\"}";
             sendDiscordFrame(1, payload);
