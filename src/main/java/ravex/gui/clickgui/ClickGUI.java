@@ -16,6 +16,8 @@ public class ClickGUI extends Screen {
     public static ModuleButton bindingModuleButton = null;
     public static String hoveredDescription = null;
     public static String searchQuery = "";
+    public static ravex.parameter.ColorParameter activeColorParameter = null;
+    public static ColorPaletteModal activeColorPalette = null;
 
     private final List<CategoryPanel> panels = new ArrayList<>();
     private final long initTime;
@@ -118,6 +120,10 @@ public class ClickGUI extends Screen {
             graphics.drawString(this.font, activeTooltipText, tx + 4, ty + 4, textCol, false);
         }
 
+        if (activeColorPalette != null) {
+            activeColorPalette.render(graphics, this.font, mouseX, mouseY, this.width, this.height);
+        }
+
         super.render(graphics, mouseX, mouseY, partialTicks);
     }
 
@@ -175,6 +181,10 @@ public class ClickGUI extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        if (activeColorPalette != null) {
+            return activeColorPalette.mouseClicked(event.x(), event.y(), event.button());
+        }
+
         int barX = this.width / 2 - 120;
         int barY = 12;
         int barW = 240;
@@ -199,6 +209,10 @@ public class ClickGUI extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (activeColorPalette != null) {
+            return activeColorPalette.keyPressed(event.key());
+        }
+
         int key = event.key();
 
         if (bindingModuleButton != null) {
@@ -243,6 +257,9 @@ public class ClickGUI extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
+        if (activeColorPalette != null) {
+            return true;
+        }
         if (searchFocused) {
             String text = event.codepointAsString();
             if (!text.isEmpty() && text.charAt(0) >= 32 && text.charAt(0) < 127) {

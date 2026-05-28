@@ -12,9 +12,6 @@ import ravex.parameter.NumberParameter;
 public class ParameterElement {
     private final Parameter<?> parameter;
     private boolean isDragging = false;
-    // Color picker state
-    private boolean pickerOpen = false;
-    private final ColorPickerWidget picker = new ColorPickerWidget();
 
     public ParameterElement(Parameter<?> parameter) {
         this.parameter = parameter;
@@ -30,8 +27,7 @@ public class ParameterElement {
             return 16;
         }
         if (parameter instanceof ColorParameter) {
-            // collapsed: 12px chip. expanded: 12 + picker + 4 padding
-            return pickerOpen ? (12 + ColorPickerWidget.TOTAL_H + 6) : 12;
+            return 12;
         }
         return 12;
     }
@@ -122,19 +118,11 @@ public class ParameterElement {
             graphics.fill(chipX,     chipY + 4, chipX + 4,  chipY + 8,  0xFF444444);
             graphics.fill(chipX, chipY, chipX + 8, chipY + 8, argb);
             // Border
-            int border = pickerOpen ? activeColor : 0xFF606060;
+            int border = 0xFF606060;
             graphics.fill(chipX - 1, chipY - 1, chipX + 9, chipY,     border);
             graphics.fill(chipX - 1, chipY + 8, chipX + 9, chipY + 9, border);
             graphics.fill(chipX - 1, chipY - 1, chipX,     chipY + 9, border);
             graphics.fill(chipX + 8, chipY - 1, chipX + 9, chipY + 9, border);
-
-            if (pickerOpen) {
-                // Sync picker with current value before drawing
-                picker.setFromArgb(cp.getValue());
-                picker.render(graphics, font, x + 6, y + 14, mouseX, mouseY);
-                // Reflect any drag changes back into the parameter
-                cp.setValue(picker.getArgb());
-            }
         } else {
             // Fallback for general parameters
             String text = parameter.getName() + ": " + parameter.getValue();
@@ -164,19 +152,9 @@ public class ParameterElement {
                 isDragging = true;
                 return true;
             } else if (parameter instanceof ColorParameter cp) {
-                // Try picker first (only if open)
-                if (pickerOpen) {
-                    boolean handled = picker.mouseClicked(mouseX, mouseY, x + 6, y + 14);
-                    if (handled) {
-                        cp.setValue(picker.getArgb());
-                        return true;
-                    }
-                }
-                // Click on chip toggles picker
-                pickerOpen = !pickerOpen;
-                if (pickerOpen) {
-                    picker.setFromArgb(cp.getValue());
-                }
+                ClickGUI.activeColorParameter = cp;
+                ClickGUI.activeColorPalette = new ColorPaletteModal(cp);
+                playSound();
                 return true;
             }
         }

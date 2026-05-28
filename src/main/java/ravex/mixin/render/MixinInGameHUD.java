@@ -108,8 +108,8 @@ public abstract class MixinInGameHUD {
                             context.drawString(mc.font, tagText, tx, ty, 0xFFFFFFFF, false);
                         }
                     }
-                }
             }
+        }
         }
 
         // 3. Render each enabled HUD element

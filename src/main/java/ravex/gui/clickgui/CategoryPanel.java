@@ -20,7 +20,9 @@ public class CategoryPanel {
         this.category = category;
         this.x = x;
         this.y = y;
-        for (Module m : ModuleManager.INSTANCE.getByCategory(category)) {
+        List<Module> modules = new ArrayList<>(ModuleManager.INSTANCE.getByCategory(category));
+        modules.sort((m1, m2) -> m1.getName().compareToIgnoreCase(m2.getName()));
+        for (Module m : modules) {
             allButtons.add(new ModuleButton(m));
         }
     }

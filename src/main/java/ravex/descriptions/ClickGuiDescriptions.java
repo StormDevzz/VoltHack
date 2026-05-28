@@ -32,6 +32,9 @@ public class ClickGuiDescriptions {
         DESCRIPTIONS.put("Velocity",      "Reduce received knockback.");
         DESCRIPTIONS.put("AutoEat",       "Auto-eats when hunger is low.");
         DESCRIPTIONS.put("NoInteract",    "Prevents accidental container interaction.");
+        DESCRIPTIONS.put("SourceFiller",  "Automatically places sponges to dry nearby water.");
+        DESCRIPTIONS.put("AirPlace",      "Place blocks in the air smoothly.");
+        DESCRIPTIONS.put("Scaffold",      "Vanilla-like helper to automatically place blocks under your feet.");
     }
 
     public static String getDescription(String moduleName) {

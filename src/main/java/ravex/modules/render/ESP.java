@@ -23,8 +23,8 @@ public class ESP extends Module {
         addParameter(monsters);
         addParameter(playerColor);
         addParameter(mobColor);
-        // Only show color pickers in Box2D mode
-        playerColor.setVisible(() -> mode.getValue().equals("Box2D") && players.getValue());
-        mobColor.setVisible(() -> mode.getValue().equals("Box2D") && monsters.getValue());
+        // Show color pickers whenever respective entity target filters are enabled
+        playerColor.setVisible(players::getValue);
+        mobColor.setVisible(monsters::getValue);
     }
 }

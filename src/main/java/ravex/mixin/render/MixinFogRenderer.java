@@ -12,8 +12,8 @@ import ravex.modules.render.CustomFog;
 
 @Mixin(FogRenderer.class)
 public class MixinFogRenderer {
-    @Inject(method = "setupFog", at = @At("RETURN"), cancellable = true)
-    private void onSetupFog(Camera camera, int renderDistance, DeltaTracker deltaTracker, float bossColorModifier, ClientLevel level, CallbackInfoReturnable<org.joml.Vector4f> cir) {
+    @Inject(method = "computeFogColor", at = @At("RETURN"), cancellable = true)
+    private static void onComputeFogColor(Camera camera, float partialTick, ClientLevel level, int renderDistance, float bossColorModifier, CallbackInfoReturnable<org.joml.Vector4f> cir) {
         if (CustomFog.INSTANCE.getEnabled() && cir != null) {
             float rVal = (float) (CustomFog.INSTANCE.r.getValue() / 255.0f);
             float gVal = (float) (CustomFog.INSTANCE.g.getValue() / 255.0f);

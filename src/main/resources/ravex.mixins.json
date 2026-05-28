@@ -39,7 +39,8 @@
         "movement.MixinGuiWalk",
         "movement.MixinNoSlowDown",
         "movement.MixinVelocity",
-        "player.MixinNoInteract"
+        "player.MixinNoInteract",
+        "world.MixinBlock"
     ],
     "client": [],
     "server": [],

@@ -23,7 +23,7 @@ public class MixinWindowIcon {
         Minecraft mc = (Minecraft) (Object) this;
         long windowHandle = mc.getWindow().handle();
 
-        String title = "RaveX v" + RaveX.version + " - Minecraft 1.21.1";
+        String title = "Ravex " + RaveX.version + " - Minecraft 1.21.11";
         GLFW.glfwSetWindowTitle(windowHandle, title);
 
         try (InputStream is = getClass().getResourceAsStream("/assets/ravex/textures/icon.png")) {

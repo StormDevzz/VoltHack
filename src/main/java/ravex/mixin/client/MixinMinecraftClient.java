@@ -13,4 +13,19 @@ public abstract class MixinMinecraftClient {
     private void onTick(CallbackInfo ci) {
         RaveX.onClientTick();
     }
+
+    @Inject(method = "shouldEntityAppearGlowing", at = @At("HEAD"), cancellable = true)
+    private void onShouldEntityAppearGlowing(net.minecraft.world.entity.Entity entity, org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> cir) {
+        if (ravex.modules.render.ESP.INSTANCE.getEnabled() && ravex.modules.render.ESP.INSTANCE.mode.getValue().equals("Outline")) {
+            if (entity instanceof net.minecraft.world.entity.LivingEntity) {
+                boolean isPlayer = entity instanceof net.minecraft.world.entity.player.Player;
+                boolean isMonster = entity instanceof net.minecraft.world.entity.monster.Monster;
+                if (isPlayer && ravex.modules.render.ESP.INSTANCE.players.getValue()) {
+                    cir.setReturnValue(true);
+                } else if (isMonster && ravex.modules.render.ESP.INSTANCE.monsters.getValue()) {
+                    cir.setReturnValue(true);
+                }
+            }
+        }
+    }
 }

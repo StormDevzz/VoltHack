@@ -7,7 +7,8 @@
 
 -- ── Базовая библиотека ───────────────────────────────────────────
 
-local ravex = ravex or {}
+_G.ravex = _G.ravex or {}
+local ravex = _G.ravex
 
 function ravex.log(msg)
     client.print("[RaveX] " .. tostring(msg))

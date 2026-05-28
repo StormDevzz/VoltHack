@@ -21,6 +21,8 @@ import ravex.modules.misc.Optimizer;
 import ravex.modules.misc.AutoEat;
 import ravex.modules.player.RichPresence;
 import ravex.modules.player.NoInteract;
+import ravex.modules.player.SourceFiller;
+import ravex.modules.player.AirPlace;
 import ravex.modules.movement.GuiWalk;
 import ravex.modules.movement.NoSlowDown;
 import ravex.modules.movement.Velocity;
@@ -55,6 +57,8 @@ public class ModuleManager {
         clickGuiModules.add(AutoTool.INSTANCE);
         clickGuiModules.add(RichPresence.INSTANCE);
         clickGuiModules.add(NoInteract.INSTANCE);
+        clickGuiModules.add(SourceFiller.INSTANCE);
+        clickGuiModules.add(AirPlace.INSTANCE);
 
         // ── Movement ────────────────────────────────────────────────────────────
         clickGuiModules.add(GuiWalk.INSTANCE);

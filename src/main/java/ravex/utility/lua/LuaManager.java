@@ -8,6 +8,7 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.VarArgFunction;
+import org.luaj.vm2.lib.ThreeArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -49,6 +50,18 @@ public class LuaManager {
         registerModulesLib();
         registerDiscordLib();
         registerTimerLib();
+
+        try (InputStream in = LuaManager.class.getResourceAsStream("/lua/init.lua")) {
+            if (in != null) {
+                String code = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                globals.load(code, "init.lua").call();
+                ravex.RaveX.LOGGER.info("[Lua] init.lua loaded successfully.");
+            } else {
+                ravex.RaveX.LOGGER.warn("[Lua] init.lua not found in resources.");
+            }
+        } catch (Exception e) {
+            ravex.RaveX.LOGGER.error("[Lua] Failed to load init.lua: " + e.getMessage());
+        }
     }
 
     public Globals getGlobals() {
@@ -151,6 +164,84 @@ public class LuaManager {
                 return mc.player != null
                     ? LuaValue.valueOf(mc.player.getGameProfile().name())
                     : LuaValue.valueOf("Unknown");
+            }
+        });
+
+        lib.set("isRightClicking", new ZeroArgFunction() {
+            @Override public LuaValue call() {
+                Minecraft mc = Minecraft.getInstance();
+                return LuaValue.valueOf(mc.options.keyUse.isDown());
+            }
+        });
+
+        lib.set("getLookingPos", new OneArgFunction() {
+            @Override public LuaValue call(LuaValue arg) {
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player == null) return LuaValue.NIL;
+                double dist = arg.optdouble(4.5);
+                net.minecraft.world.phys.HitResult hit = mc.player.pick(dist, 1.0F, false);
+                if (hit != null && hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+                    net.minecraft.core.BlockPos pos = ((net.minecraft.world.phys.BlockHitResult) hit).getBlockPos();
+                    LuaValue tbl = LuaValue.tableOf();
+                    tbl.set("x", pos.getX());
+                    tbl.set("y", pos.getY());
+                    tbl.set("z", pos.getZ());
+                    return tbl;
+                } else {
+                    net.minecraft.world.phys.Vec3 eye = mc.player.getEyePosition(1.0F);
+                    net.minecraft.world.phys.Vec3 look = mc.player.getViewVector(1.0F);
+                    net.minecraft.world.phys.Vec3 target = eye.add(look.x * dist, look.y * dist, look.z * dist);
+                    net.minecraft.core.BlockPos pos = net.minecraft.core.BlockPos.containing(target);
+                    LuaValue tbl = LuaValue.tableOf();
+                    tbl.set("x", pos.getX());
+                    tbl.set("y", pos.getY());
+                    tbl.set("z", pos.getZ());
+                    return tbl;
+                }
+            }
+        });
+
+        lib.set("setHighlightPos", new org.luaj.vm2.lib.VarArgFunction() {
+            @Override public org.luaj.vm2.Varargs invoke(org.luaj.vm2.Varargs args) {
+                if (args.narg() < 3 || args.arg(1).isnil() || args.arg(2).isnil() || args.arg(3).isnil()) {
+                    ravex.modules.player.AirPlace.highlightPos = null;
+                } else {
+                    ravex.modules.player.AirPlace.highlightPos = new net.minecraft.world.phys.Vec3(
+                        args.arg(1).todouble(), args.arg(2).todouble(), args.arg(3).todouble()
+                    );
+                }
+                return LuaValue.NIL;
+            }
+        });
+
+        lib.set("placeBlock", new ThreeArgFunction() {
+            @Override public LuaValue call(LuaValue xVal, LuaValue yVal, LuaValue zVal) {
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player == null || mc.level == null) return LuaValue.FALSE;
+                net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(xVal.checkint(), yVal.checkint(), zVal.checkint());
+                net.minecraft.world.phys.Vec3 hitVec = net.minecraft.world.phys.Vec3.atCenterOf(pos);
+                net.minecraft.world.phys.BlockHitResult hit = new net.minecraft.world.phys.BlockHitResult(hitVec, net.minecraft.core.Direction.UP, pos, false);
+                mc.gameMode.useItemOn(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+                return LuaValue.TRUE;
+            }
+        });
+
+        lib.set("swingHand", new ZeroArgFunction() {
+            @Override public LuaValue call() {
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player != null) {
+                    mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+                }
+                return LuaValue.NIL;
+            }
+        });
+
+        lib.set("isHoldingBlock", new ZeroArgFunction() {
+            @Override public LuaValue call() {
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player == null) return LuaValue.FALSE;
+                net.minecraft.world.item.ItemStack stack = mc.player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND);
+                return LuaValue.valueOf(!stack.isEmpty() && stack.getItem() instanceof net.minecraft.world.item.BlockItem);
             }
         });
 
