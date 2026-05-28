@@ -12,13 +12,20 @@ import ravex.modules.render.CustomFog;
 
 @Mixin(FogRenderer.class)
 public class MixinFogRenderer {
-    @Inject(method = "computeFogColor", at = @At("RETURN"), cancellable = true)
-    private static void onComputeFogColor(Camera camera, float partialTick, ClientLevel level, int renderDistance, float bossColorModifier, CallbackInfoReturnable<org.joml.Vector4f> cir) {
-        if (CustomFog.INSTANCE.getEnabled() && cir != null) {
-            float rVal = (float) (CustomFog.INSTANCE.r.getValue() / 255.0f);
-            float gVal = (float) (CustomFog.INSTANCE.g.getValue() / 255.0f);
-            float bVal = (float) (CustomFog.INSTANCE.b.getValue() / 255.0f);
-            cir.setReturnValue(new org.joml.Vector4f(rVal, gVal, bVal, 1.0f));
-        }
+    /**
+     * setupFog is the public method that computes and returns the final fog color Vector4f.
+     * We override the return value when CustomFog is enabled.
+     */
+    @Inject(method = "setupFog", at = @At("RETURN"), cancellable = true)
+    private void onSetupFog(Camera camera, int renderDistance, DeltaTracker deltaTracker, float bossColorModifier, ClientLevel level, CallbackInfoReturnable<org.joml.Vector4f> cir) {
+        if (!CustomFog.INSTANCE.getEnabled()) return;
+
+        int argb = CustomFog.INSTANCE.color.getValue();
+        float r = ((argb >> 16) & 0xFF) / 255.0f;
+        float g = ((argb >>  8) & 0xFF) / 255.0f;
+        float b = ( argb        & 0xFF) / 255.0f;
+        float a = 1.0f;
+
+        cir.setReturnValue(new org.joml.Vector4f(r, g, b, a));
     }
 }

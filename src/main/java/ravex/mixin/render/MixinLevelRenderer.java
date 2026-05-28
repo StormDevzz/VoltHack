@@ -3,7 +3,7 @@ package ravex.mixin.render;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.Minecraft;
-import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.phys.Vec3;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -32,35 +32,28 @@ public class MixinLevelRenderer {
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null && mc.player != null) {
                 try {
-                    PoseStack poseStack = new PoseStack();
-                    
-                    // 1. Recreate camera rotation matrix using mapping-independent reflection pitch and yaw helpers
-                    float pitch = Render3DUtils.getPitch(camera);
-                    float yaw = Render3DUtils.getYaw(camera);
-                    
-                    poseStack.mulPose(new org.joml.Quaternionf().rotationX((float) Math.toRadians(pitch)));
-                    poseStack.mulPose(new org.joml.Quaternionf().rotationY((float) Math.toRadians(yaw + 180.0f)));
-                    
-                    // 2. Translate coordinates relative to camera position to place in absolute world coordinates
+                    // Use modelViewMatrix directly — it already contains the correct camera transform.
+                    // We just need to translate it to our target world position relative to the camera.
                     double[] camPos = Render3DUtils.getCameraPos(camera);
-                    poseStack.translate(
-                        (float) (ravex.modules.player.AirPlace.highlightPos.x - camPos[0]),
-                        (float) (ravex.modules.player.AirPlace.highlightPos.y - camPos[1]),
-                        (float) (ravex.modules.player.AirPlace.highlightPos.z - camPos[2])
-                    );
-                    
-                    org.joml.Matrix4f matrix = poseStack.last().pose();
-                    
+                    Vec3 hp = ravex.modules.player.AirPlace.highlightPos;
+
+                    org.joml.Matrix4f matrix = new org.joml.Matrix4f(modelViewMatrix)
+                        .translate(
+                            (float)(hp.x - camPos[0]),
+                            (float)(hp.y - camPos[1]),
+                            (float)(hp.z - camPos[2])
+                        );
+
                     MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
                     VertexConsumer vertexConsumer = Render3DUtils.getLinesConsumer(bufferSource);
                     if (vertexConsumer != null) {
-                        float r = 1.0f;
-                        float g = 0.2f;
-                        float b = 0.2f;
-                        float a = ravex.modules.player.AirPlace.renderAlpha * 0.8f; // scale maximum alpha elegantly
-                        
+                        float r = 0.4f;
+                        float g = 0.8f;
+                        float b = 1.0f;
+                        float a = ravex.modules.player.AirPlace.renderAlpha * 0.9f;
+
                         double size = ravex.modules.player.AirPlace.renderSize;
-                        
+
                         BlockRenderer.renderWireframe(vertexConsumer, matrix, size, r, g, b, a);
                         Render3DUtils.endLinesBatch(bufferSource);
                     }
