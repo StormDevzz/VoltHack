@@ -3,7 +3,7 @@ package ravex.mixin.render;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.DeltaTracker;
+import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,19 +13,23 @@ import ravex.modules.render.CustomFog;
 @Mixin(FogRenderer.class)
 public class MixinFogRenderer {
     /**
-     * setupFog is the public method that computes and returns the final fog color Vector4f.
-     * We override the return value when CustomFog is enabled.
+     * Inject into the PRIVATE computeFogColor method which is called BEFORE updateBuffer writes
+     * the color to the GPU UBO. Changing the return value here means the correct color goes
+     * into the UBO and is actually visible.
+     * 
+     * Signature: private Vector4f computeFogColor(Camera, float, ClientLevel, int, float)
      */
-    @Inject(method = "setupFog", at = @At("RETURN"), cancellable = true)
-    private void onSetupFog(Camera camera, int renderDistance, DeltaTracker deltaTracker, float bossColorModifier, ClientLevel level, CallbackInfoReturnable<org.joml.Vector4f> cir) {
+    @Inject(method = "computeFogColor", at = @At("RETURN"), cancellable = true)
+    private void onComputeFogColor(Camera camera, float partialTick, ClientLevel level,
+                                   int renderDistance, float bossColorModifier,
+                                   CallbackInfoReturnable<Vector4f> cir) {
         if (!CustomFog.INSTANCE.getEnabled()) return;
 
         int argb = CustomFog.INSTANCE.color.getValue();
         float r = ((argb >> 16) & 0xFF) / 255.0f;
         float g = ((argb >>  8) & 0xFF) / 255.0f;
         float b = ( argb        & 0xFF) / 255.0f;
-        float a = 1.0f;
 
-        cir.setReturnValue(new org.joml.Vector4f(r, g, b, a));
+        cir.setReturnValue(new Vector4f(r, g, b, 1.0f));
     }
 }

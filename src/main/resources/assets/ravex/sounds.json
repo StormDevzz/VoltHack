@@ -2,25 +2,25 @@
   "enable": {
     "category": "master",
     "sounds": [
-      "ravex:sounds/enable"
+      "ravex:enable"
     ]
   },
   "disable": {
     "category": "master",
     "sounds": [
-      "ravex:sounds/disable"
+      "ravex:disable"
     ]
   },
   "settings_open": {
     "category": "master",
     "sounds": [
-      "ravex:sounds/settings_open"
+      "ravex:settings_open"
     ]
   },
   "settings_close": {
     "category": "master",
     "sounds": [
-      "ravex:sounds/settings_close"
+      "ravex:settings_close"
     ]
   }
 }

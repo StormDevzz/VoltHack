@@ -12,6 +12,7 @@
     },
     "environment": "client",
     "entrypoints": {
+        "main": ["ravex.RaveXCommon"],
         "client": ["ravex.RaveX"]
     },
     "mixins": ["ravex.mixins.json"],

@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ravex.modules.ModuleManager;
 import ravex.utility.misc.GithubUtility;
-import ravex.utility.sound.SoundUtility;
 import net.minecraft.client.Minecraft;
 
 public class RaveX implements ClientModInitializer {
@@ -31,11 +30,7 @@ public class RaveX implements ClientModInitializer {
         ModuleManager.INSTANCE.init();
         LOGGER.info("Successfully registered " + ModuleManager.INSTANCE.getModules().size() + " modules!");
 
-        // 2. Register custom SoundEvents safely by unfreezing MappedRegistry
-        LOGGER.info("Registering custom SoundEvents...");
-        SoundUtility.register();
 
-        // 3. Github integration (not a module)
         LOGGER.info("Connecting to Github API...");
         new Thread(GithubUtility::checkUpdates).start();
 

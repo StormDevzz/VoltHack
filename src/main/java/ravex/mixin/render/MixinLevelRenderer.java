@@ -5,6 +5,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -28,39 +29,39 @@ public class MixinLevelRenderer {
         boolean bool2,
         CallbackInfo ci
     ) {
-        if (ravex.modules.player.AirPlace.INSTANCE.getEnabled() && ravex.modules.player.AirPlace.highlightPos != null) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.level != null && mc.player != null) {
-                try {
-                    // Use modelViewMatrix directly — it already contains the correct camera transform.
-                    // We just need to translate it to our target world position relative to the camera.
-                    double[] camPos = Render3DUtils.getCameraPos(camera);
-                    Vec3 hp = ravex.modules.player.AirPlace.highlightPos;
+        if (!ravex.modules.player.AirPlace.INSTANCE.getEnabled()) return;
+        Vec3 hp = ravex.modules.player.AirPlace.highlightPos;
+        if (hp == null) return;
 
-                    org.joml.Matrix4f matrix = new org.joml.Matrix4f(modelViewMatrix)
-                        .translate(
-                            (float)(hp.x - camPos[0]),
-                            (float)(hp.y - camPos[1]),
-                            (float)(hp.z - camPos[2])
-                        );
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return;
 
-                    MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-                    VertexConsumer vertexConsumer = Render3DUtils.getLinesConsumer(bufferSource);
-                    if (vertexConsumer != null) {
-                        float r = 0.4f;
-                        float g = 0.8f;
-                        float b = 1.0f;
-                        float a = ravex.modules.player.AirPlace.renderAlpha * 0.9f;
+        try {
+            // camera.position() is the public API — no reflection needed.
+            // modelViewMatrix already encodes camera rotation. We just translate by
+            // (worldPos - cameraPos) to place the wireframe at the correct world location.
+            Vec3 camPos = camera.position();
 
-                        double size = ravex.modules.player.AirPlace.renderSize;
+            Matrix4f matrix = new Matrix4f(modelViewMatrix)
+                .translate(
+                    (float)(hp.x - camPos.x),
+                    (float)(hp.y - camPos.y),
+                    (float)(hp.z - camPos.z)
+                );
 
-                        BlockRenderer.renderWireframe(vertexConsumer, matrix, size, r, g, b, a);
-                        Render3DUtils.endLinesBatch(bufferSource);
-                    }
-                } catch (Exception e) {
-                    // Fail silently to prevent spam
-                }
+            MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+            VertexConsumer vertexConsumer = Render3DUtils.getLinesConsumer(bufferSource);
+            if (vertexConsumer != null) {
+                float r = 0.4f;
+                float g = 0.8f;
+                float b = 1.0f;
+                float a = ravex.modules.player.AirPlace.renderAlpha * 0.9f;
+                double size = ravex.modules.player.AirPlace.renderSize;
+                BlockRenderer.renderWireframe(vertexConsumer, matrix, size, r, g, b, a);
+                Render3DUtils.endLinesBatch(bufferSource);
             }
+        } catch (Exception e) {
+            // Fail silently to prevent spam
         }
     }
 }
